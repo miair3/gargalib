@@ -3,21 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 
 const API_BASE = "https://gargalib-backend.onrender.com/api";
 
-const normalizeUser = (user) => {
-  if (!user) return null;
-
-  return {
-    ...user,
-    id: user.id || user._id,
-    isBanned:
-      user.isBanned === true ||
-      Boolean(user.banUntil) ||
-      Boolean(user.banned_until),
-    banUntil: user.banUntil || user.banned_until || null,
-    banReason: user.banReason || user.ban_reason || "",
-  };
-};
-
 const Login = () => {
   const navigate = useNavigate();
 
@@ -35,10 +20,24 @@ const Login = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const normalizeUser = (user) => {
+    if (!user) return null;
+
+    return {
+      ...user,
+      id: user.id || user._id,
+      isBanned:
+        user.isBanned === true ||
+        Boolean(user.banUntil) ||
+        Boolean(user.banned_until),
+      banUntil: user.banUntil || user.banned_until || null,
+      banReason: user.banReason || user.ban_reason || "",
+    };
+  };
+
   const isUserStillBanned = (user) => {
     if (!user?.isBanned) return false;
-
-    if (!user.banUntil) return true;
+    if (!user?.banUntil) return true;
 
     const banEnd = new Date(user.banUntil).getTime();
     if (Number.isNaN(banEnd)) return true;
@@ -60,20 +59,26 @@ const Login = () => {
         body: JSON.stringify(form),
       });
 
-      const data = await res.json();
+      let data = null;
+
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error("Сервер вернул не JSON");
+      }
 
       if (!res.ok) {
         alert(data?.message || data?.error || "Ошибка входа");
         return;
       }
 
-      if (data?.message) {
+      if (data?.message && !data?.token) {
         alert(data.message);
         return;
       }
 
       if (!data?.token || !data?.user) {
-        alert("Сервер вернул неполные данные для входа");
+        alert("Сервер вернул неполные данные");
         return;
       }
 
@@ -81,7 +86,6 @@ const Login = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("currentUser", JSON.stringify(user));
-
       window.dispatchEvent(new Event("userChanged"));
 
       if (isUserStillBanned(user)) {
@@ -102,11 +106,9 @@ const Login = () => {
     <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.22),transparent_28%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.16),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.16),transparent_26%),linear-gradient(135deg,#050816_0%,#0f1230_42%,#241046_72%,#090b18_100%)]"></div>
-
         <div className="absolute -left-20 top-10 h-72 w-72 animate-[pulse_8s_ease-in-out_infinite] rounded-full bg-fuchsia-500/20 blur-[110px]"></div>
         <div className="absolute right-[-60px] top-20 h-80 w-80 animate-[pulse_10s_ease-in-out_infinite] rounded-full bg-cyan-400/20 blur-[120px]"></div>
         <div className="absolute bottom-[-80px] left-1/2 h-96 w-96 -translate-x-1/2 animate-[pulse_9s_ease-in-out_infinite] rounded-full bg-violet-500/20 blur-[140px]"></div>
-
         <div className="absolute inset-0 opacity-[0.18] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:44px_44px]"></div>
       </div>
 
@@ -136,45 +138,10 @@ const Login = () => {
                   хранения своей аниме-коллекции в одном красивом месте.
                 </p>
               </div>
-
-              <div className="space-y-5">
-                <div className="rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500/20 to-fuchsia-500/20 text-xl">
-                      🎴
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">Смотреть аниме</p>
-                      <p className="text-xs text-slate-400">Серии, коллекции и любимые тайтлы</p>
-                    </div>
-                  </div>
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 text-xl">
-                      💬
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">Общаться и делиться</p>
-                      <p className="text-xs text-slate-400">Комментарии, чат и взаимодействие с людьми</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
-                  <p className="text-sm font-semibold text-white">О сайте</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-300">
-                    Это место, где можно не только смотреть аниме, но и вести
-                    свой профиль, сохранять избранное, следить за просмотренным
-                    и загружать новые серии.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
           <div className="relative flex min-h-[760px] items-center justify-center px-5 py-8 sm:px-8 lg:px-10">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06),transparent_58%)]"></div>
-
             <div className="relative w-full max-w-md">
               <div className="rounded-[30px] border border-white/10 bg-white/[0.07] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl sm:p-8">
                 <div className="text-center lg:text-left">
@@ -198,17 +165,9 @@ const Login = () => {
                     <label className="mb-2 block text-sm font-semibold text-slate-200">
                       Email
                     </label>
-                    <div
-                      className={`group rounded-2xl border bg-white/5 transition duration-300 ${
-                        focusedField === "email"
-                          ? "border-pink-400/50 shadow-[0_0_0_4px_rgba(236,72,153,0.08)]"
-                          : "border-white/10 hover:border-white/20"
-                      }`}
-                    >
+                    <div className={`group rounded-2xl border bg-white/5 transition duration-300 ${focusedField === "email" ? "border-pink-400/50 shadow-[0_0_0_4px_rgba(236,72,153,0.08)]" : "border-white/10 hover:border-white/20"}`}>
                       <div className="flex items-center gap-3 px-4">
-                        <span className="text-lg text-slate-400 transition group-focus-within:text-pink-300">
-                          ✉
-                        </span>
+                        <span className="text-lg text-slate-400 transition group-focus-within:text-pink-300">✉</span>
                         <input
                           type="email"
                           name="email"
@@ -228,17 +187,9 @@ const Login = () => {
                     <label className="mb-2 block text-sm font-semibold text-slate-200">
                       Пароль
                     </label>
-                    <div
-                      className={`group rounded-2xl border bg-white/5 transition duration-300 ${
-                        focusedField === "password"
-                          ? "border-cyan-400/50 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]"
-                          : "border-white/10 hover:border-white/20"
-                      }`}
-                    >
+                    <div className={`group rounded-2xl border bg-white/5 transition duration-300 ${focusedField === "password" ? "border-cyan-400/50 shadow-[0_0_0_4px_rgba(34,211,238,0.08)]" : "border-white/10 hover:border-white/20"}`}>
                       <div className="flex items-center gap-3 px-4">
-                        <span className="text-lg text-slate-400 transition group-focus-within:text-cyan-300">
-                          🔒
-                        </span>
+                        <span className="text-lg text-slate-400 transition group-focus-within:text-cyan-300">🔒</span>
                         <input
                           type="password"
                           name="password"
@@ -259,33 +210,16 @@ const Login = () => {
                     disabled={loading}
                     className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-5 py-4 text-sm font-bold text-white shadow-[0_18px_45px_rgba(168,85,247,0.35)] transition duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
                   >
-                    <span className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.22),transparent)] opacity-0 transition duration-700 group-hover:translate-x-full group-hover:opacity-100"></span>
                     <span className="relative">{loading ? "Вход..." : "Войти"}</span>
                   </button>
                 </form>
 
-                <div className="mt-7">
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10"></div>
-                    </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-transparent px-3 text-xs uppercase tracking-[0.28em] text-slate-500">
-                        GarGaLib
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="mt-5 text-center text-sm text-slate-300">
-                    Нет аккаунта?{" "}
-                    <Link
-                      to="/register"
-                      className="font-semibold text-pink-300 transition hover:text-pink-200 hover:underline"
-                    >
-                      Регистрация
-                    </Link>
-                  </p>
-                </div>
+                <p className="mt-5 text-center text-sm text-slate-300">
+                  Нет аккаунта?{" "}
+                  <Link to="/register" className="font-semibold text-pink-300 transition hover:text-pink-200 hover:underline">
+                    Регистрация
+                  </Link>
+                </p>
               </div>
 
               <div className="mt-5 text-center text-xs tracking-[0.22em] text-slate-500">

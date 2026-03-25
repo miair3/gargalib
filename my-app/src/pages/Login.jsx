@@ -1,6 +1,23 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+const API_BASE = "https://gargalib-backend.onrender.com/api";
+
+const normalizeUser = (user) => {
+  if (!user) return null;
+
+  return {
+    ...user,
+    id: user.id || user._id,
+    isBanned:
+      user.isBanned === true ||
+      Boolean(user.banUntil) ||
+      Boolean(user.banned_until),
+    banUntil: user.banUntil || user.banned_until || null,
+    banReason: user.banReason || user.ban_reason || "",
+  };
+};
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -23,50 +40,10 @@ const Login = () => {
 
     if (!user.banUntil) return true;
 
-    const now = Date.now();
     const banEnd = new Date(user.banUntil).getTime();
+    if (Number.isNaN(banEnd)) return true;
 
-    return now < banEnd;
-  };
-
-  const clearExpiredBan = async (user) => {
-    if (!user?.isBanned || !user?.banUntil) return user;
-
-    const now = Date.now();
-    const banEnd = new Date(user.banUntil).getTime();
-
-    if (now >= banEnd) {
-      try {
-        const userId = user.id || user._id;
-
-        if (!userId) return user;
-
-        const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${userId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            isBanned: false,
-            banReason: "",
-            banUntil: null,
-          }),
-        });
-
-        if (res.ok) {
-          return {
-            ...user,
-            isBanned: false,
-            banReason: "",
-            banUntil: null,
-          };
-        }
-      } catch (err) {
-        console.log("Ошибка при авторазбане:", err);
-      }
-    }
-
-    return user;
+    return Date.now() < banEnd;
   };
 
   const handleSubmit = async (e) => {
@@ -75,7 +52,7 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("https://gargalib-backend.onrender.com/api/login", {
+      const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,14 +62,22 @@ const Login = () => {
 
       const data = await res.json();
 
-      if (data.message) {
+      if (!res.ok) {
+        alert(data?.message || data?.error || "Ошибка входа");
+        return;
+      }
+
+      if (data?.message) {
         alert(data.message);
         return;
       }
 
-      let user = data.user;
+      if (!data?.token || !data?.user) {
+        alert("Сервер вернул неполные данные для входа");
+        return;
+      }
 
-      user = await clearExpiredBan(user);
+      const user = normalizeUser(data.user);
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("currentUser", JSON.stringify(user));
@@ -100,13 +85,13 @@ const Login = () => {
       window.dispatchEvent(new Event("userChanged"));
 
       if (isUserStillBanned(user)) {
-        navigate("/banned");
+        navigate("/banned", { replace: true });
         return;
       }
 
-      navigate("/home");
+      navigate("/home", { replace: true });
     } catch (err) {
-      console.log(err);
+      console.log("LOGIN ERROR:", err);
       alert("Ошибка сервера");
     } finally {
       setLoading(false);
@@ -159,12 +144,8 @@ const Login = () => {
                       🎴
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
-                        Смотреть аниме
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Серии, коллекции и любимые тайтлы
-                      </p>
+                      <p className="text-sm font-semibold text-white">Смотреть аниме</p>
+                      <p className="text-xs text-slate-400">Серии, коллекции и любимые тайтлы</p>
                     </div>
                   </div>
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
@@ -173,20 +154,14 @@ const Login = () => {
                       💬
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-white">
-                        Общаться и делиться
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        Комментарии, чат и взаимодействие с людьми
-                      </p>
+                      <p className="text-sm font-semibold text-white">Общаться и делиться</p>
+                      <p className="text-xs text-slate-400">Комментарии, чат и взаимодействие с людьми</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
-                  <p className="text-sm font-semibold text-white">
-                    О сайте
-                  </p>
+                  <p className="text-sm font-semibold text-white">О сайте</p>
                   <p className="mt-2 text-sm leading-7 text-slate-300">
                     Это место, где можно не только смотреть аниме, но и вести
                     свой профиль, сохранять избранное, следить за просмотренным
@@ -285,9 +260,7 @@ const Login = () => {
                     className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-5 py-4 text-sm font-bold text-white shadow-[0_18px_45px_rgba(168,85,247,0.35)] transition duration-300 hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
                   >
                     <span className="absolute inset-0 bg-[linear-gradient(120deg,transparent,rgba(255,255,255,0.22),transparent)] opacity-0 transition duration-700 group-hover:translate-x-full group-hover:opacity-100"></span>
-                    <span className="relative">
-                      {loading ? "Вход..." : "Войти"}
-                    </span>
+                    <span className="relative">{loading ? "Вход..." : "Войти"}</span>
                   </button>
                 </form>
 

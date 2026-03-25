@@ -3,9 +3,17 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-//
-// 🔥 REGISTER
-//
+const normalizeUser = (row) => {
+  if (!row) return null;
+
+  return {
+    ...row,
+    isBanned: Boolean(row.banned_until),
+    banUntil: row.banned_until || null,
+    banReason: row.ban_reason || "",
+  };
+};
+
 router.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -19,18 +27,18 @@ router.post("/register", async (req, res) => {
     }
 
     const userExists = await pool.query(
-      "SELECT id FROM users WHERE email=$1",
+      "SELECT id FROM users WHERE email = $1",
       [safeEmail]
     );
 
     if (userExists.rows.length > 0) {
-      return res.json({ message: "Пользователь уже есть" });
+      return res.status(409).json({ message: "Пользователь уже есть" });
     }
 
     const result = await pool.query(
       `
       INSERT INTO users (username, email, password, role, is_online, last_seen)
-      VALUES ($1,$2,$3,'user', false, NULL)
+      VALUES ($1, $2, $3, 'user', false, NULL)
       RETURNING
         id,
         username,
@@ -45,16 +53,17 @@ router.post("/register", async (req, res) => {
       [safeUsername, safeEmail, safePassword]
     );
 
-    res.json(result.rows[0]);
+    return res.status(201).json({
+      success: true,
+      user: normalizeUser(result.rows[0]),
+      message: "Регистрация успешна",
+    });
   } catch (err) {
     console.log("REGISTER ERROR:", err);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ message: "Ошибка сервера" });
   }
 });
 
-//
-// 🔑 LOGIN
-//
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -67,12 +76,12 @@ router.post("/login", async (req, res) => {
     }
 
     const result = await pool.query(
-      "SELECT * FROM users WHERE email=$1 AND password=$2",
+      "SELECT * FROM users WHERE email = $1 AND password = $2",
       [safeEmail, safePassword]
     );
 
     if (result.rows.length === 0) {
-      return res.json({ message: "Неверные данные" });
+      return res.status(401).json({ message: "Неверные данные" });
     }
 
     const foundUser = result.rows[0];
@@ -100,27 +109,26 @@ router.post("/login", async (req, res) => {
         ban_reason,
         last_seen
       FROM users
-      WHERE id=$1
+      WHERE id = $1
       `,
       [foundUser.id]
     );
-
-    const user = updatedUser.rows[0];
 
     const token =
       Math.random().toString(36).substring(2) +
       Date.now().toString(36);
 
-    res.json({ user, token });
+    return res.status(200).json({
+      success: true,
+      token,
+      user: normalizeUser(updatedUser.rows[0]),
+    });
   } catch (err) {
     console.log("LOGIN ERROR:", err);
-    res.status(500).json({ error: "Ошибка сервера" });
+    return res.status(500).json({ message: "Ошибка сервера" });
   }
 });
 
-//
-// 👤 ПОЛУЧИТЬ ПОЛЬЗОВАТЕЛЯ
-//
 router.get("/user/:id", async (req, res) => {
   try {
     const result = await pool.query(
@@ -136,7 +144,7 @@ router.get("/user/:id", async (req, res) => {
         ban_reason,
         last_seen
       FROM users
-      WHERE id=$1
+      WHERE id = $1
       `,
       [req.params.id]
     );
@@ -145,16 +153,13 @@ router.get("/user/:id", async (req, res) => {
       return res.status(404).json({ message: "Пользователь не найден" });
     }
 
-    res.json(result.rows[0]);
+    return res.json(normalizeUser(result.rows[0]));
   } catch (err) {
     console.log("GET USER ERROR:", err);
-    res.status(500).json({ error: "Ошибка получения" });
+    return res.status(500).json({ message: "Ошибка получения" });
   }
 });
 
-//
-// ✏️ ОБНОВИТЬ ПРОФИЛЬ
-//
 router.put("/update-profile", async (req, res) => {
   const { id, username, avatar } = req.body;
 
@@ -162,8 +167,8 @@ router.put("/update-profile", async (req, res) => {
     const result = await pool.query(
       `
       UPDATE users
-      SET username=$1, avatar=$2
-      WHERE id=$3
+      SET username = $1, avatar = $2
+      WHERE id = $3
       RETURNING
         id,
         username,
@@ -182,34 +187,31 @@ router.put("/update-profile", async (req, res) => {
       return res.status(404).json({ message: "Пользователь не найден" });
     }
 
-    res.json(result.rows[0]);
+    return res.json(normalizeUser(result.rows[0]));
   } catch (err) {
     console.log("UPDATE PROFILE ERROR:", err);
-    res.status(500).json({ error: "Ошибка обновления" });
+    return res.status(500).json({ message: "Ошибка обновления" });
   }
 });
 
-//
-// 🔥 СДЕЛАТЬ АДМИНОМ (ТОЛЬКО ДЛЯ OWNER)
-//
 router.put("/make-admin", async (req, res) => {
   const { id, ownerId } = req.body;
 
   try {
     const owner = await pool.query(
-      "SELECT role FROM users WHERE id=$1",
+      "SELECT role FROM users WHERE id = $1",
       [ownerId]
     );
 
     if (owner.rows[0]?.role !== "owner") {
-      return res.json({ message: "Нет доступа" });
+      return res.status(403).json({ message: "Нет доступа" });
     }
 
     const result = await pool.query(
       `
       UPDATE users
-      SET role='admin'
-      WHERE id=$1
+      SET role = 'admin'
+      WHERE id = $1
       RETURNING
         id,
         username,
@@ -228,34 +230,31 @@ router.put("/make-admin", async (req, res) => {
       return res.status(404).json({ message: "Пользователь не найден" });
     }
 
-    res.json(result.rows[0]);
+    return res.json(normalizeUser(result.rows[0]));
   } catch (err) {
     console.log("MAKE ADMIN ERROR:", err);
-    res.status(500).json({ error: "Ошибка назначения" });
+    return res.status(500).json({ message: "Ошибка назначения" });
   }
 });
 
-//
-// 🔥 УБРАТЬ АДМИНА
-//
 router.put("/remove-admin", async (req, res) => {
   const { id, ownerId } = req.body;
 
   try {
     const owner = await pool.query(
-      "SELECT role FROM users WHERE id=$1",
+      "SELECT role FROM users WHERE id = $1",
       [ownerId]
     );
 
     if (owner.rows[0]?.role !== "owner") {
-      return res.json({ message: "Нет доступа" });
+      return res.status(403).json({ message: "Нет доступа" });
     }
 
     const result = await pool.query(
       `
       UPDATE users
-      SET role='user'
-      WHERE id=$1
+      SET role = 'user'
+      WHERE id = $1
       RETURNING
         id,
         username,
@@ -274,10 +273,10 @@ router.put("/remove-admin", async (req, res) => {
       return res.status(404).json({ message: "Пользователь не найден" });
     }
 
-    res.json(result.rows[0]);
+    return res.json(normalizeUser(result.rows[0]));
   } catch (err) {
     console.log("REMOVE ADMIN ERROR:", err);
-    res.status(500).json({ error: "Ошибка" });
+    return res.status(500).json({ message: "Ошибка" });
   }
 });
 

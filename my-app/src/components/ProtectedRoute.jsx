@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://gargalib-backend.onrender.com";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");

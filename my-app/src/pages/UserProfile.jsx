@@ -90,7 +90,7 @@ const UserProfile = () => {
       const current = getCurrentUser();
       setCurrentUser(current);
 
-      const res = await fetch(`http://localhost:5000/api/users/${id}`);
+      const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${id}`);
       const data = await res.json();
 
       if (!res.ok || data.message) {
@@ -99,7 +99,7 @@ const UserProfile = () => {
       }
 
       const favoritesRes = await fetch(
-        `http://localhost:5000/api/users/${id}/favorites`
+        `https://gargalib-backend.onrender.com/api/users/${id}/favorites`
       );
       const favoritesData = await favoritesRes.json();
       setFavoriteAnime(Array.isArray(favoritesData) ? favoritesData : []);
@@ -109,7 +109,7 @@ const UserProfile = () => {
 
       if (current?.id && String(current.id) !== String(preparedUser.id)) {
         const followRes = await fetch(
-          `http://localhost:5000/api/users/follow-status/${current.id}/${preparedUser.id}`
+          `https://gargalib-backend.onrender.com/api/users/follow-status/${current.id}/${preparedUser.id}`
         );
         const followData = await followRes.json();
         setFollowing(followRes.ok ? Boolean(followData.following) : false);
@@ -163,7 +163,7 @@ const UserProfile = () => {
     if (!currentUser?.id || !user?.id) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/follow", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -210,7 +210,7 @@ const UserProfile = () => {
     if (!currentUser?.id || !user?.id) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/ban", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/ban", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,7 +239,7 @@ const UserProfile = () => {
     if (!currentUser?.id || !user?.id) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/unban", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/unban", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -54,7 +54,7 @@ const AddEpisode = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:5000/api/episodes", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/episodes", {
         method: "POST",
         body: formData,
       });

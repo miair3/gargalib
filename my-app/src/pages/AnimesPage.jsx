@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://gargalib-backend.onrender.com";
 
 const STAR_PRESETS = Array.from({ length: 130 }).map((_, i) => ({
   left: `${2 + ((i * 37) % 96)}%`,

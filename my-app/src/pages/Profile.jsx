@@ -121,10 +121,10 @@ const Profile = () => {
       }
 
       const [profileRes, usersRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/users/${currentUser.id}?t=${Date.now()}`, {
+        fetch(`https://gargalib-backend.onrender.com/api/users/${currentUser.id}?t=${Date.now()}`, {
           cache: "no-store",
         }),
-        fetch(`http://localhost:5000/api/users?t=${Date.now()}`, {
+        fetch(`https://gargalib-backend.onrender.com/api/users?t=${Date.now()}`, {
           cache: "no-store",
         }),
       ]);
@@ -178,7 +178,7 @@ const Profile = () => {
       }
 
       const res = await fetch(
-        `http://localhost:5000/api/users/${currentUser.id}?t=${Date.now()}`,
+        `https://gargalib-backend.onrender.com/api/users/${currentUser.id}?t=${Date.now()}`,
         {
           cache: "no-store",
         }
@@ -224,7 +224,7 @@ const Profile = () => {
 
   const loadUsersForOwner = async (searchValue = searchEmail) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users?t=${Date.now()}`, {
+      const res = await fetch(`https://gargalib-backend.onrender.com/api/users?t=${Date.now()}`, {
         cache: "no-store",
       });
       const data = await res.json();
@@ -246,7 +246,7 @@ const Profile = () => {
 
   const loadAnime = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/anime");
+      const res = await fetch("https://gargalib-backend.onrender.com/api/anime");
       const data = await res.json();
       setAnimeList(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -342,7 +342,7 @@ const Profile = () => {
     const found = users.find((u) => String(u.id) === String(id));
     if (!found) return;
     try {
-      const res = await fetch("http://localhost:5000/api/users/make-admin-email", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/make-admin-email", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: found.email, ownerId: user.id }),
@@ -362,7 +362,7 @@ const Profile = () => {
 
   const removeAdmin = async (id) => {
     try {
-      const res = await fetch("http://localhost:5000/api/users/remove-admin", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/remove-admin", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ownerId: user.id }),
@@ -382,7 +382,7 @@ const Profile = () => {
 
   const deleteUser = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -398,7 +398,7 @@ const Profile = () => {
 
   const logout = async () => {
     try {
-      await fetch("http://localhost:5000/api/users/offline", {
+      await fetch("https://gargalib-backend.onrender.com/api/users/offline", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),
@@ -422,7 +422,7 @@ const Profile = () => {
 
   const saveProfile = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/users/update", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/users/update", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

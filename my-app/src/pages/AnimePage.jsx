@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import BannedScreen from "../components/BannedScreen";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://gargalib-backend.onrender.com";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },

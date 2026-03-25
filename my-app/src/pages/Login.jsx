@@ -41,7 +41,7 @@ const Login = () => {
 
         if (!userId) return user;
 
-        const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${userId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
@@ -75,7 +75,7 @@ const Login = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:5000/api/login", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

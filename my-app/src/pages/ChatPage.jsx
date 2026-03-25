@@ -65,7 +65,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
+        `https://gargalib-backend.onrender.com/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
         {
           method: "GET",
           cache: "no-store",
@@ -114,7 +114,7 @@ const ChatPage = () => {
       try {
         setLoading(true);
 
-        const res = await fetch(`http://localhost:5000/api/users/${targetUserId}`);
+        const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${targetUserId}`);
         const data = await res.json();
 
         if (!res.ok || data.message) {
@@ -186,7 +186,7 @@ const ChatPage = () => {
     try {
       setSendError("");
 
-      const res = await fetch("http://localhost:5000/api/messages", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -219,7 +219,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/messages/dialog/${currentUserId}/${selectedUserId}`,
+        `https://gargalib-backend.onrender.com/api/messages/dialog/${currentUserId}/${selectedUserId}`,
         { method: "DELETE" }
       );
 
@@ -260,7 +260,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/messages/${activeMessage.id}/delete`,
+        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/delete`,
         {
           method: "PUT",
           headers: {
@@ -315,7 +315,7 @@ const ChatPage = () => {
       setEditError("");
 
       const res = await fetch(
-        `http://localhost:5000/api/messages/${editingMessageId}/edit`,
+        `https://gargalib-backend.onrender.com/api/messages/${editingMessageId}/edit`,
         {
           method: "PUT",
           headers: {
@@ -360,7 +360,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/messages/${activeMessage.id}/restore`,
+        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/restore`,
         {
           method: "PUT",
           headers: {

@@ -74,7 +74,7 @@ router.post("/", upload.single("video"), async (req, res) => {
       return res.status(400).json({ message: "Такая серия уже существует" });
     }
 
-    const videoUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const videoUrl = `https://gargalib-backend.onrender.com/uploads/${req.file.filename}`;
 
     const result = await pool.query(
       `

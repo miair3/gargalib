@@ -55,7 +55,7 @@ const Register = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:5000/api/register", {
+      const res = await fetch("https://gargalib-backend.onrender.com/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

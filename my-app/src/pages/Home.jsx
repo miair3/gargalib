@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://gargalib-backend.onrender.com";
 
 const Home = () => {
   const navigate = useNavigate();

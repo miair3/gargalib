@@ -4,13 +4,13 @@ const AdminPanel = ({ user }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/users")
+    fetch("https://gargalib-backend.onrender.com/api/users")
       .then(res => res.json())
       .then(data => setUsers(data));
   }, []);
 
   const makeAdmin = async (id) => {
-    await fetch("http://localhost:5000/api/make-admin", {
+    await fetch("https://gargalib-backend.onrender.com/api/make-admin", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -23,7 +23,7 @@ const AdminPanel = ({ user }) => {
   };
 
   const removeAdmin = async (id) => {
-    await fetch("http://localhost:5000/api/remove-admin", {
+    await fetch("https://gargalib-backend.onrender.com/api/remove-admin", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -12,7 +12,13 @@ const ProtectedRoute = ({ children }) => {
 
   const getStoredUser = () => {
     try {
-      return JSON.parse(localStorage.getItem("currentUser"));
+      const raw = localStorage.getItem("currentUser");
+
+      if (!raw || raw === "undefined" || raw === "null") {
+        return null;
+      }
+
+      return JSON.parse(raw);
     } catch {
       return null;
     }
@@ -73,6 +79,7 @@ const ProtectedRoute = ({ children }) => {
       const storedUser = getStoredUser();
 
       if (!storedUser) {
+        localStorage.removeItem("currentUser");
         setAllowed(false);
         setBanned(false);
         setChecking(false);

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { getStorage } from "./storage";
 
 import HomeLogin from "./pages/HomeLogin";
 import Login from "./pages/Login";
@@ -19,8 +20,7 @@ import Header from "./components/Header";
 import BannedScreen from "./components/BannedScreen";
 
 export default function App() {
-  const savedUser = localStorage.getItem("currentUser");
-  const currentUser = savedUser ? JSON.parse(savedUser) : null;
+  const currentUser = getStorage("currentUser", null);
   const reason = currentUser?.banReason || "Без причины";
   const until = currentUser?.banUntil || null;
 

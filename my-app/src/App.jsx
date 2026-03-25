@@ -19,7 +19,8 @@ import Header from "./components/Header";
 import BannedScreen from "./components/BannedScreen";
 
 export default function App() {
-  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+  const savedUser = localStorage.getItem("currentUser");
+  const currentUser = savedUser ? JSON.parse(savedUser) : null;
   const reason = currentUser?.banReason || "Без причины";
   const until = currentUser?.banUntil || null;
 

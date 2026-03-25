@@ -11,7 +11,22 @@ import notificationRoutes from "./routes/notifications.js";
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://gargalib-frontend.onrender.com",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS error: origin not allowed"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json({ limit: "100mb" }));
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
@@ -25,6 +40,10 @@ app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Gargalib backend is running");
+});
+
 app.use((err, req, res, next) => {
   if (err?.type === "entity.too.large") {
     return res.status(413).json({
@@ -36,6 +55,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Ошибка сервера" });
 });
 
-app.listen(5000, () => {
-  console.log("Server started on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
 });

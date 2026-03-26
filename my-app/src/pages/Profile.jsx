@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = "https://gargalib-backend.onrender.com";
+
 const Profile = () => {
   const navigate = useNavigate();
 
@@ -34,13 +36,24 @@ const Profile = () => {
     loading: false,
   });
 
-  const getCurrentUser = () => {
+  const getJsonStorage = (key, fallback) => {
     try {
-      return JSON.parse(localStorage.getItem("currentUser"));
+      const value = localStorage.getItem(key);
+      if (!value || value === "undefined" || value === "null") {
+        return fallback;
+      }
+      return JSON.parse(value);
     } catch {
-      return null;
+      return fallback;
     }
   };
+
+  const getCurrentUser = () => {
+    return getJsonStorage("currentUser", null);
+  };
+
+  const getDefaultAvatar = (name = "User") =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
 
   const normalizeUserCard = (u) => {
     if (!u) return null;
@@ -49,12 +62,7 @@ const Profile = () => {
       id: u.id || u._id || u.userId || "",
       username: u.username || u.name || "Пользователь",
       email: u.email || "",
-      avatar:
-        u.avatar ||
-        localStorage.getItem(`avatar_${u.id || u._id || u.userId}`) ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          u.username || u.name || "User"
-        )}`,
+      avatar: u.avatar || getDefaultAvatar(u.username || u.name || "User"),
       role: u.role || "user",
     };
   };
@@ -84,10 +92,7 @@ const Profile = () => {
       }
     }
 
-    const rawArray =
-      type === "followers"
-        ? targetUser?.followers
-        : targetUser?.following;
+    const rawArray = type === "followers" ? targetUser?.followers : targetUser?.following;
 
     if (Array.isArray(rawArray) && rawArray.length) {
       if (typeof rawArray[0] === "object" && rawArray[0] !== null) {
@@ -121,10 +126,10 @@ const Profile = () => {
       }
 
       const [profileRes, usersRes] = await Promise.all([
-        fetch(`https://gargalib-backend.onrender.com/api/users/${currentUser.id}?t=${Date.now()}`, {
+        fetch(`${API_BASE}/api/users/${currentUser.id}?t=${Date.now()}`, {
           cache: "no-store",
         }),
-        fetch(`https://gargalib-backend.onrender.com/api/users?t=${Date.now()}`, {
+        fetch(`${API_BASE}/api/users?t=${Date.now()}`, {
           cache: "no-store",
         }),
       ]);
@@ -133,11 +138,7 @@ const Profile = () => {
       const allUsers = await usersRes.json();
 
       const allUsersList = Array.isArray(allUsers) ? allUsers : [];
-      const preparedList = buildConnectionUsers(
-        freshProfile,
-        type,
-        allUsersList
-      );
+      const preparedList = buildConnectionUsers(freshProfile, type, allUsersList);
 
       setConnectionsModal({
         open: true,
@@ -171,38 +172,30 @@ const Profile = () => {
   const loadCurrentProfile = async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
+
       const currentUser = getCurrentUser();
       if (!currentUser?.id) {
         if (!silent) setLoading(false);
         return;
       }
 
-      const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/users/${currentUser.id}?t=${Date.now()}`,
-        {
-          cache: "no-store",
-        }
-      );
+      const res = await fetch(`${API_BASE}/api/users/${currentUser.id}?t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
+
       if (!res.ok || data?.message) {
         if (!silent) setLoading(false);
         return;
       }
 
-      const savedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
-      const watched = JSON.parse(
-        localStorage.getItem(`watched_${currentUser.id}`) || "[]"
-      );
-      const favorites = JSON.parse(
-        localStorage.getItem(`favorites_${currentUser.id}`) || "[]"
-      );
-      const uploaded = JSON.parse(
-        localStorage.getItem(`uploaded_${currentUser.id}`) || "[]"
-      );
+      const watched = getJsonStorage(`watched_${currentUser.id}`, []);
+      const favorites = getJsonStorage(`favorites_${currentUser.id}`, []);
+      const uploaded = getJsonStorage(`uploaded_${currentUser.id}`, []);
 
       const preparedUser = {
         ...data,
-        avatar: savedAvatar || data.avatar || "https://i.pravatar.cc/150",
+        avatar: data.avatar || "",
       };
 
       setUser(preparedUser);
@@ -214,6 +207,7 @@ const Profile = () => {
         favorites: favorites.length,
         uploaded: uploaded.length,
       });
+
       localStorage.setItem("currentUser", JSON.stringify(preparedUser));
     } catch (err) {
       console.log(err);
@@ -224,16 +218,18 @@ const Profile = () => {
 
   const loadUsersForOwner = async (searchValue = searchEmail) => {
     try {
-      const res = await fetch(`https://gargalib-backend.onrender.com/api/users?t=${Date.now()}`, {
+      const res = await fetch(`${API_BASE}/api/users?t=${Date.now()}`, {
         cache: "no-store",
       });
       const data = await res.json();
       const list = Array.isArray(data) ? data : [];
       setUsers(list);
+
       if (!searchValue.trim()) {
         setFilteredUsers(list);
         return;
       }
+
       setFilteredUsers(
         list.filter((u) =>
           (u.email || "").toLowerCase().includes(searchValue.toLowerCase())
@@ -246,7 +242,7 @@ const Profile = () => {
 
   const loadAnime = async () => {
     try {
-      const res = await fetch("https://gargalib-backend.onrender.com/api/anime");
+      const res = await fetch(`${API_BASE}/api/anime`);
       const data = await res.json();
       setAnimeList(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -262,18 +258,22 @@ const Profile = () => {
         setLoading(false);
         return;
       }
+
       await Promise.all([loadCurrentProfile(), loadAnime()]);
+
       const freshCurrent = getCurrentUser();
       if (freshCurrent?.role === "owner") {
         await loadUsersForOwner();
       }
     };
+
     init();
   }, []);
 
   useEffect(() => {
     const reload = async () => {
       await loadCurrentProfile({ silent: true });
+
       const currentUser = getCurrentUser();
       if (currentUser?.role === "owner") {
         await loadUsersForOwner();
@@ -283,6 +283,7 @@ const Profile = () => {
     window.addEventListener("userChanged", reload);
     window.addEventListener("focus", reload);
     window.addEventListener("storage", reload);
+
     return () => {
       window.removeEventListener("userChanged", reload);
       window.removeEventListener("focus", reload);
@@ -303,17 +304,13 @@ const Profile = () => {
 
   const watchedAnime = useMemo(
     () =>
-      animeList.filter((anime) =>
-        watchedIds.map(String).includes(String(anime.id))
-      ),
+      animeList.filter((anime) => watchedIds.map(String).includes(String(anime.id))),
     [animeList, watchedIds]
   );
 
   const favoriteAnime = useMemo(
     () =>
-      animeList.filter((anime) =>
-        favoriteIds.map(String).includes(String(anime.id))
-      ),
+      animeList.filter((anime) => favoriteIds.map(String).includes(String(anime.id))),
     [animeList, favoriteIds]
   );
 
@@ -327,31 +324,34 @@ const Profile = () => {
 
   const handleSearchChange = (value) => {
     setSearchEmail(value);
+
     if (!value.trim()) {
       setFilteredUsers(users);
       return;
     }
+
     setFilteredUsers(
-      users.filter((u) =>
-        (u.email || "").toLowerCase().includes(value.toLowerCase())
-      )
+      users.filter((u) => (u.email || "").toLowerCase().includes(value.toLowerCase()))
     );
   };
 
   const makeAdmin = async (id) => {
     const found = users.find((u) => String(u.id) === String(id));
     if (!found) return;
+
     try {
-      const res = await fetch("https://gargalib-backend.onrender.com/api/users/make-admin-email", {
+      const res = await fetch(`${API_BASE}/api/users/make-admin-email`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: found.email, ownerId: user.id }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         alert(data.message || "Ошибка");
         return;
       }
+
       await loadUsersForOwner();
       await loadCurrentProfile({ silent: true });
       window.dispatchEvent(new Event("userChanged"));
@@ -362,16 +362,18 @@ const Profile = () => {
 
   const removeAdmin = async (id) => {
     try {
-      const res = await fetch("https://gargalib-backend.onrender.com/api/users/remove-admin", {
+      const res = await fetch(`${API_BASE}/api/users/remove-admin`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, ownerId: user.id }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         alert(data.message || "Ошибка");
         return;
       }
+
       await loadUsersForOwner();
       await loadCurrentProfile({ silent: true });
       window.dispatchEvent(new Event("userChanged"));
@@ -382,14 +384,16 @@ const Profile = () => {
 
   const deleteUser = async (id) => {
     try {
-      const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${id}`, {
+      const res = await fetch(`${API_BASE}/api/users/${id}`, {
         method: "DELETE",
       });
+
       const data = await res.json();
       if (!res.ok) {
         alert(data.message || "Ошибка удаления");
         return;
       }
+
       await loadUsersForOwner();
     } catch (err) {
       console.log(err);
@@ -398,7 +402,7 @@ const Profile = () => {
 
   const logout = async () => {
     try {
-      await fetch("https://gargalib-backend.onrender.com/api/users/offline", {
+      await fetch(`${API_BASE}/api/users/offline`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id }),
@@ -406,6 +410,7 @@ const Profile = () => {
     } catch (err) {
       console.log(err);
     }
+
     localStorage.clear();
     window.dispatchEvent(new Event("userChanged"));
     navigate("/login");
@@ -414,37 +419,52 @@ const Profile = () => {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Выбери изображение");
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onloadend = () =>
-      setUser((prev) => ({ ...prev, avatar: reader.result }));
+
+    reader.onloadend = () => {
+      setUser((prev) => ({
+        ...prev,
+        avatar: reader.result,
+      }));
+    };
+
     reader.readAsDataURL(file);
   };
 
   const saveProfile = async () => {
     try {
-      const res = await fetch("https://gargalib-backend.onrender.com/api/users/update", {
+      const res = await fetch(`${API_BASE}/api/users/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
           username: newName.trim() || user.username,
-          avatar: user.avatar,
+          avatar: user.avatar || "",
         }),
       });
+
       const data = await res.json();
-      if (!res.ok || !data.success) {
+
+      if (!res.ok || !data.success || !data.user) {
         alert(data.message || "Ошибка сохранения");
         return;
       }
+
       const updatedUser = {
         ...user,
         ...data.user,
-        avatar: data.user.avatar || user.avatar || "https://i.pravatar.cc/150",
+        avatar: data.user.avatar || user.avatar || "",
       };
+
       setUser(updatedUser);
       setNewName(updatedUser.username || "");
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-      localStorage.setItem(`avatar_${updatedUser.id}`, updatedUser.avatar || "");
       window.dispatchEvent(new Event("userChanged"));
       setEdit(false);
       alert("Профиль обновлён");
@@ -532,9 +552,7 @@ const Profile = () => {
               <p className="line-clamp-2 text-base font-bold text-white transition group-hover:text-pink-300">
                 {anime.title}
               </p>
-              <p className="mt-1 text-xs text-white/45">
-                {anime.genre || "Без жанра"}
-              </p>
+              <p className="mt-1 text-xs text-white/45">{anime.genre || "Без жанра"}</p>
             </div>
           </div>
         ))}
@@ -763,7 +781,11 @@ const Profile = () => {
               <div className="relative mx-auto shrink-0 lg:mx-0">
                 <div className="absolute inset-[-12px] rounded-full bg-gradient-to-br from-pink-500/55 via-fuchsia-500/40 to-cyan-400/45 blur-xl" style={{ animation: "glowPulse 3.5s ease-in-out infinite" }} />
                 <div className="absolute inset-[-3px] rounded-full border border-white/20" />
-                <img src={user.avatar || "https://i.pravatar.cc/150"} alt="avatar" className="relative h-32 w-32 rounded-full border-4 border-white/20 object-cover shadow-2xl sm:h-36 sm:w-36" />
+                <img
+                  src={user.avatar || getDefaultAvatar(user.username || "User")}
+                  alt="avatar"
+                  className="relative h-32 w-32 rounded-full border-4 border-white/20 object-cover shadow-2xl sm:h-36 sm:w-36"
+                />
                 <span className="absolute bottom-2 right-2 h-5 w-5 rounded-full border-2 border-[#070b18] bg-emerald-400 shadow-lg shadow-emerald-300/40" />
                 {edit && (
                   <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-lg shadow-xl transition duration-300 hover:scale-105">
@@ -777,6 +799,7 @@ const Profile = () => {
                 <span className="inline-flex rounded-full border border-fuchsia-300/20 bg-fuchsia-400/10 px-3 py-1 text-[10px] uppercase tracking-[0.25em] text-fuchsia-200 backdrop-blur-md sm:text-xs">
                   Anime profile zone
                 </span>
+
                 {edit ? (
                   <div className="mt-4">
                     <p className="mb-2 text-xs uppercase tracking-[0.25em] text-white/40">
@@ -795,9 +818,9 @@ const Profile = () => {
                     {user.username || "Пользователь"}
                   </h1>
                 )}
-                <p className="mt-2 break-all text-sm text-white/55 sm:text-base">
-                  {user.email}
-                </p>
+
+                <p className="mt-2 break-all text-sm text-white/55 sm:text-base">{user.email}</p>
+
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                   <span
                     className={`inline-block rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-widest ${
@@ -838,9 +861,7 @@ const Profile = () => {
                   key={label}
                   type="button"
                   onClick={() => clickable && openConnectionsModal(clickType)}
-                  className={`glow-card relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br ${color} p-5 text-center shadow-[0_16px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl transition duration-300 hover:-translate-y-2 ${
-                    clickable ? "cursor-pointer" : "cursor-default"
-                  }`}
+                  className={`glow-card relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br ${color} p-5 text-center shadow-[0_16px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl transition duration-300 hover:-translate-y-2 ${clickable ? "cursor-pointer" : "cursor-default"}`}
                   style={{
                     animation: `cardReveal .75s ease forwards`,
                     animationDelay: `${index * 90}ms`,
@@ -1019,6 +1040,7 @@ const Profile = () => {
                   {users.length} пользователей
                 </span>
               </div>
+
               <div className="space-y-6 p-6 sm:p-8">
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <div className="relative flex-1">
@@ -1050,6 +1072,7 @@ const Profile = () => {
                     Найти
                   </button>
                 </div>
+
                 <div className="space-y-3">
                   {displayUsers.map((u) => (
                     <div
@@ -1058,13 +1081,7 @@ const Profile = () => {
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <img
-                          src={
-                            u.avatar ||
-                            localStorage.getItem(`avatar_${u.id}`) ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              u.username || "User"
-                            )}`
-                          }
+                          src={u.avatar || getDefaultAvatar(u.username || "User")}
                           alt={u.username}
                           className="h-11 w-11 shrink-0 rounded-full border border-white/10 object-cover"
                         />
@@ -1077,6 +1094,7 @@ const Profile = () => {
                           </p>
                         </div>
                       </div>
+
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
@@ -1085,6 +1103,7 @@ const Profile = () => {
                         >
                           {u.role}
                         </span>
+
                         {u.role !== "admin" && u.role !== "owner" && (
                           <button
                             onClick={() => makeAdmin(u.id)}
@@ -1093,6 +1112,7 @@ const Profile = () => {
                             + Admin
                           </button>
                         )}
+
                         {u.role === "admin" && (
                           <button
                             onClick={() => removeAdmin(u.id)}
@@ -1101,6 +1121,7 @@ const Profile = () => {
                             Убрать
                           </button>
                         )}
+
                         <button
                           onClick={() => deleteUser(u.id)}
                           className="rounded-xl border border-red-500/30 bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300 transition duration-300 hover:scale-105 hover:bg-red-500/35"
@@ -1110,6 +1131,7 @@ const Profile = () => {
                       </div>
                     </div>
                   ))}
+
                   {displayUsers.length === 0 && (
                     <div className="rounded-[28px] border border-white/10 bg-white/5 px-6 py-14 text-center text-sm text-white/40 backdrop-blur-xl">
                       Пользователи не найдены
@@ -1175,7 +1197,7 @@ const Profile = () => {
                       >
                         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.08),transparent_35%)] opacity-80" />
                         <img
-                          src={person.avatar}
+                          src={person.avatar || getDefaultAvatar(person.username || "User")}
                           alt={person.username}
                           className="relative h-14 w-14 rounded-full border border-white/15 object-cover shadow-lg"
                         />

@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs/promises";
+
+import pool from "./db.js";
 
 import authRoutes from "./routes/posts.js";
 import animeRoutes from "./routes/anime.js";
@@ -55,8 +58,32 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Ошибка сервера" });
 });
 
+async function initDatabase() {
+  try {
+    const schemaPath = path.join(process.cwd(), "schema.sql");
+    const schemaSql = await fs.readFile(schemaPath, "utf8");
+
+    await pool.query(schemaSql);
+    console.log("Database schema initialized successfully");
+  } catch (error) {
+    console.log("DATABASE INIT ERROR:", error);
+    throw error;
+  }
+}
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
-});
+async function startServer() {
+  try {
+    await initDatabase();
+
+    app.listen(PORT, () => {
+      console.log(`Server started on port ${PORT}`);
+    });
+  } catch (error) {
+    console.log("FAILED TO START SERVER:", error);
+    process.exit(1);
+  }
+}
+
+startServer();

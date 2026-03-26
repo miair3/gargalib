@@ -31,17 +31,12 @@ const sanitizeAvatar = (avatar) => {
 
   if (!safeAvatar) return "";
 
-  const isBase64Image =
-    safeAvatar.startsWith("data:image/jpeg;base64,") ||
-    safeAvatar.startsWith("data:image/jpg;base64,") ||
-    safeAvatar.startsWith("data:image/png;base64,") ||
-    safeAvatar.startsWith("data:image/webp;base64,");
-
+  const isBase64Image = safeAvatar.startsWith("data:image/");
   const isHttpUrl =
     safeAvatar.startsWith("http://") || safeAvatar.startsWith("https://");
 
   if (!isBase64Image && !isHttpUrl) {
-    return "";
+    return null;
   }
 
   if (safeAvatar.length > MAX_AVATAR_LENGTH) {
@@ -51,9 +46,6 @@ const sanitizeAvatar = (avatar) => {
   return safeAvatar;
 };
 
-//
-// 👥 ВСЕ ПОЛЬЗОВАТЕЛИ
-//
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
@@ -80,9 +72,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-//
-// 🔎 ПРОВЕРИТЬ ПОДПИСКУ
-//
 router.get("/follow-status/:followerId/:followingId", async (req, res) => {
   const { followerId, followingId } = req.params;
 
@@ -99,9 +88,6 @@ router.get("/follow-status/:followerId/:followingId", async (req, res) => {
   }
 });
 
-//
-// ❤️ ПОЛУЧИТЬ ИЗБРАННОЕ ПОЛЬЗОВАТЕЛЯ
-//
 router.get("/:id/favorites", async (req, res) => {
   const { id } = req.params;
 
@@ -124,9 +110,6 @@ router.get("/:id/favorites", async (req, res) => {
   }
 });
 
-//
-// ❤️ СИНХРОНИЗАЦИЯ ИЗБРАННОГО В БД
-//
 router.post("/favorites/sync", async (req, res) => {
   const { userId, animeIds } = req.body;
 
@@ -151,9 +134,6 @@ router.post("/favorites/sync", async (req, res) => {
   }
 });
 
-//
-// ✏️ ОБНОВИТЬ ПРОФИЛЬ
-//
 router.put("/update", async (req, res) => {
   const { userId, username, avatar } = req.body;
 
@@ -175,8 +155,8 @@ router.put("/update", async (req, res) => {
     }
 
     if (safeAvatar === null) {
-      return res.status(413).json({
-        message: "Аватар слишком большой. Выберите изображение меньше.",
+      return res.status(400).json({
+        message: "Неверный формат аватарки или файл слишком большой",
       });
     }
 
@@ -214,9 +194,6 @@ router.put("/update", async (req, res) => {
   }
 });
 
-//
-// ⭐ СДЕЛАТЬ АДМИНОМ
-//
 router.put("/make-admin-email", async (req, res) => {
   const { email, ownerId } = req.body;
 
@@ -246,9 +223,6 @@ router.put("/make-admin-email", async (req, res) => {
   }
 });
 
-//
-// ➖ УБРАТЬ АДМИНА
-//
 router.put("/remove-admin", async (req, res) => {
   const { id, ownerId } = req.body;
 
@@ -278,9 +252,6 @@ router.put("/remove-admin", async (req, res) => {
   }
 });
 
-//
-// 🔨 ЗАБАНИТЬ ПОЛЬЗОВАТЕЛЯ
-//
 router.put("/ban", async (req, res) => {
   const { adminId, targetUserId, durationHours, reason } = req.body;
 
@@ -338,9 +309,6 @@ router.put("/ban", async (req, res) => {
   }
 });
 
-//
-// ✅ РАЗБАНИТЬ ПОЛЬЗОВАТЕЛЯ
-//
 router.put("/unban", async (req, res) => {
   const { adminId, targetUserId } = req.body;
 
@@ -396,9 +364,6 @@ router.put("/unban", async (req, res) => {
   }
 });
 
-//
-// ❤️ ПОДПИСКА + 🔔 УВЕДОМЛЕНИЕ
-//
 router.post("/follow", async (req, res) => {
   const { followerId, followingId } = req.body;
 
@@ -455,9 +420,6 @@ router.post("/follow", async (req, res) => {
   }
 });
 
-//
-// 🟢 ONLINE
-//
 router.put("/online", async (req, res) => {
   const { userId } = req.body;
 
@@ -479,9 +441,6 @@ router.put("/online", async (req, res) => {
   }
 });
 
-//
-// 🔴 OFFLINE
-//
 router.put("/offline", async (req, res) => {
   const { userId } = req.body;
 
@@ -503,9 +462,6 @@ router.put("/offline", async (req, res) => {
   }
 });
 
-//
-// 👤 ОДИН ПОЛЬЗОВАТЕЛЬ
-//
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -597,9 +553,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-//
-// ❌ УДАЛИТЬ ПОЛЬЗОВАТЕЛЯ
-//
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
 
@@ -619,15 +572,9 @@ router.delete("/:id", async (req, res) => {
       [id]
     );
 
-    await pool.query(
-      "DELETE FROM user_favorites WHERE user_id=$1",
-      [id]
-    );
+    await pool.query("DELETE FROM user_favorites WHERE user_id=$1", [id]);
 
-    await pool.query(
-      "DELETE FROM users WHERE id=$1",
-      [id]
-    );
+    await pool.query("DELETE FROM users WHERE id=$1", [id]);
 
     res.json({ success: true });
   } catch (err) {

@@ -131,6 +131,10 @@ const ProtectedRoute = ({ children }) => {
         const normalizedUser = {
           ...freshUser,
           id: freshUser.id || freshUser._id,
+          avatar:
+            freshUser.avatar ||
+            storedUser.avatar ||
+            "",
           isBanned:
             freshUser.isBanned === true ||
             Boolean(freshUser.banUntil) ||

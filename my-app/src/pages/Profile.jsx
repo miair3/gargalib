@@ -27,6 +27,7 @@ const Profile = () => {
   const [watchedIds, setWatchedIds] = useState([]);
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [stats, setStats] = useState({ watched: 0, favorites: 0, uploaded: 0 });
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
 
   const [connectionsModal, setConnectionsModal] = useState({
     open: false,
@@ -195,7 +196,7 @@ const Profile = () => {
 
       const preparedUser = {
         ...data,
-        avatar: data.avatar || "",
+        avatar: data.avatar || currentUser.avatar || "",
       };
 
       setUser(preparedUser);
@@ -425,6 +426,8 @@ const Profile = () => {
       return;
     }
 
+    setSelectedAvatarFile(file);
+
     const reader = new FileReader();
 
     reader.onloadend = () => {
@@ -439,13 +442,15 @@ const Profile = () => {
 
   const saveProfile = async () => {
     try {
+      const currentUser = getCurrentUser();
+
       const res = await fetch(`${API_BASE}/api/users/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
           username: newName.trim() || user.username,
-          avatar: user.avatar || "",
+          avatar: user.avatar || currentUser?.avatar || "",
         }),
       });
 
@@ -459,10 +464,15 @@ const Profile = () => {
       const updatedUser = {
         ...user,
         ...data.user,
-        avatar: data.user.avatar || user.avatar || "",
+        avatar:
+          data.user.avatar ||
+          user.avatar ||
+          currentUser?.avatar ||
+          "",
       };
 
       setUser(updatedUser);
+      setSelectedAvatarFile(null);
       setNewName(updatedUser.username || "");
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
       window.dispatchEvent(new Event("userChanged"));

@@ -21,6 +21,9 @@ const Header = ({ children }) => {
   const notificationsIntervalRef = useRef(null);
   const onlineIntervalRef = useRef(null);
 
+  const getDefaultAvatar = (name = "User") =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
+
   const getCurrentUser = () => {
     try {
       return JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -36,13 +39,7 @@ const Header = ({ children }) => {
 
   const loadUser = () => {
     const user = getCurrentUser();
-    const userId = user?.id || user?._id;
-
-    setAvatar(
-      user?.avatar ||
-        localStorage.getItem(`avatar_${userId}`) ||
-        "https://i.pravatar.cc/100?img=12"
-    );
+    setAvatar(user?.avatar || getDefaultAvatar(user?.username || "User"));
   };
 
   const setUserOnline = async () => {
@@ -168,12 +165,14 @@ const Header = ({ children }) => {
     };
 
     const handleFocus = () => {
+      loadUser();
       setUserOnline();
       loadNotifications();
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
+        loadUser();
         setUserOnline();
         loadNotifications();
       }
@@ -367,7 +366,7 @@ const Header = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("currentUser");
 
-    setAvatar("https://i.pravatar.cc/100?img=12");
+    setAvatar(getDefaultAvatar("User"));
     setOpen(false);
     setNotificationsOpen(false);
     setNotifications([]);
@@ -546,8 +545,7 @@ const Header = ({ children }) => {
                           <img
                             src={
                               item.avatar ||
-                              localStorage.getItem(`avatar_${String(item.id)}`) ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(item.username || "User")}&background=random`
+                              getDefaultAvatar(item.username || "User")
                             }
                             alt={item.username}
                             className="h-11 w-11 rounded-full border border-white/15 object-cover"

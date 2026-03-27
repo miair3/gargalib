@@ -53,7 +53,6 @@ const UserProfile = () => {
       id: data.id || data._id,
       avatar:
         data.avatar ||
-        localStorage.getItem(`avatar_${data.id || data._id}`) ||
         `https://ui-avatars.com/api/?name=${encodeURIComponent(
           data.username || "User"
         )}`,

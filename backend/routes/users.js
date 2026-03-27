@@ -25,7 +25,7 @@ const normalizeUserRow = (row) => {
 };
 
 const sanitizeAvatar = (avatar) => {
-  if (!avatar) return "";
+  if (avatar === undefined || avatar === null) return undefined;
 
   const safeAvatar = String(avatar).trim();
 
@@ -160,6 +160,40 @@ router.put("/update", async (req, res) => {
       });
     }
 
+    const existingUser = await pool.query(
+      `
+      SELECT
+        id,
+        username,
+        email,
+        role,
+        avatar,
+        banned_until,
+        ban_reason,
+        banned_by,
+        last_seen
+      FROM users
+      WHERE id = $1
+      `,
+      [safeUserId]
+    );
+
+    if (!existingUser.rows.length) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    const currentAvatar = existingUser.rows[0].avatar || "";
+
+    let finalAvatar = currentAvatar;
+
+    if (safeAvatar !== undefined) {
+      if (safeAvatar !== "") {
+        finalAvatar = safeAvatar;
+      } else if (!currentAvatar) {
+        finalAvatar = "";
+      }
+    }
+
     const result = await pool.query(
       `
       UPDATE users
@@ -177,7 +211,7 @@ router.put("/update", async (req, res) => {
         banned_by,
         last_seen
       `,
-      [safeUsername, safeAvatar, safeUserId]
+      [safeUsername, finalAvatar, safeUserId]
     );
 
     if (!result.rows.length) {

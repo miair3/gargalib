@@ -28,6 +28,7 @@ const Profile = () => {
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [stats, setStats] = useState({ watched: 0, favorites: 0, uploaded: 0 });
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
+  const [avatarDirty, setAvatarDirty] = useState(false);
 
   const [connectionsModal, setConnectionsModal] = useState({
     open: false,
@@ -196,7 +197,10 @@ const Profile = () => {
 
       const preparedUser = {
         ...data,
-        avatar: data.avatar || currentUser.avatar || "",
+        avatar:
+          edit && avatarDirty
+            ? user.avatar
+            : data.avatar || currentUser.avatar || user.avatar || "",
       };
 
       setUser(preparedUser);
@@ -273,6 +277,8 @@ const Profile = () => {
 
   useEffect(() => {
     const reload = async () => {
+      if (edit && avatarDirty) return;
+
       await loadCurrentProfile({ silent: true });
 
       const currentUser = getCurrentUser();
@@ -290,7 +296,7 @@ const Profile = () => {
       window.removeEventListener("focus", reload);
       window.removeEventListener("storage", reload);
     };
-  }, []);
+  }, [edit, avatarDirty]);
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -431,6 +437,7 @@ const Profile = () => {
     const reader = new FileReader();
 
     reader.onloadend = () => {
+      setAvatarDirty(true);
       setUser((prev) => ({
         ...prev,
         avatar: reader.result,
@@ -473,6 +480,7 @@ const Profile = () => {
 
       setUser(updatedUser);
       setSelectedAvatarFile(null);
+      setAvatarDirty(false);
       setNewName(updatedUser.username || "");
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
       window.dispatchEvent(new Event("userChanged"));

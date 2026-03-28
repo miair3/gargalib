@@ -269,7 +269,7 @@ const AnimeCard = ({ anime, index, onOpen }) => (
 
       <div className="relative h-52 overflow-hidden sm:h-64 xl:h-72">
         <img
-          src={anime.image || "https://static.crunchyroll.com/cr-acquisition/assets/img/start/hero/us-global/background-desktop.jpg"}
+          src={anime.image || "https://placehold.co/600x900?text=Anime"}
           alt={anime.title}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
         />

@@ -100,9 +100,7 @@ const ChatPage = () => {
         return;
       }
 
-      const nextMessages = Array.isArray(data)
-        ? data.map(normalizeMessage)
-        : [];
+      const nextMessages = Array.isArray(data) ? data.map(normalizeMessage) : [];
 
       setMessages((prev) => {
         const prevStr = JSON.stringify(prev);
@@ -455,10 +453,6 @@ const ChatPage = () => {
 
   return (
     <div className="min-h-screen overflow-hidden bg-gradient-to-br from-[#070b18] via-[#151a43] to-[#3e0f60] text-white">
-      <div className="absolute left-6 top-10 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl"></div>
-      <div className="absolute right-10 top-10 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl"></div>
-      <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-violet-500/20 blur-3xl"></div>
-
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
@@ -492,11 +486,6 @@ const ChatPage = () => {
                   alt={selectedUser.username}
                   className="h-14 w-14 rounded-full border border-white/10 object-cover"
                 />
-                <span
-                  className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#1c214f] ${
-                    selectedUser.is_online ? "bg-emerald-400" : "bg-slate-500"
-                  }`}
-                ></span>
               </div>
 
               <div className="min-w-0">
@@ -517,14 +506,7 @@ const ChatPage = () => {
             </button>
           </div>
 
-          <div
-            className="flex-1 overflow-y-auto px-4 py-6 sm:px-6"
-            style={{
-              backgroundImage:
-                "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)",
-              backgroundSize: "22px 22px",
-            }}
-          >
+          <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
             {messages.length > 0 ? (
               <div className="space-y-3">
                 {messages.map((msg) => {
@@ -584,11 +566,7 @@ const ChatPage = () => {
                           </div>
                         ) : (
                           <>
-                            <p
-                              className={`whitespace-pre-wrap break-words text-[15px] leading-5 sm:text-[16px] ${
-                                msg.deleted ? "text-white/80" : ""
-                              }`}
-                            >
+                            <p className={`whitespace-pre-wrap break-words text-[15px] leading-5 sm:text-[16px] ${msg.deleted ? "text-white/80" : ""}`}>
                               {msg.text}
                             </p>
 

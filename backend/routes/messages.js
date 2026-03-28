@@ -2,12 +2,8 @@ import express from "express";
 import pool from "../db.js";
 
 const router = express.Router();
-
 const MAX_MESSAGE_LENGTH = 4096;
 
-//
-// Базовый SELECT для диалога
-//
 const dialogSelect = `
   SELECT
     id,
@@ -24,9 +20,6 @@ const dialogSelect = `
   FROM messages
 `;
 
-//
-// ✅ Проверка: можно ли писать
-//
 router.get("/can-chat/:currentUserId/:targetUserId", async (req, res) => {
   const { currentUserId, targetUserId } = req.params;
 
@@ -43,9 +36,6 @@ router.get("/can-chat/:currentUserId/:targetUserId", async (req, res) => {
   }
 });
 
-//
-// 📩 Получить сообщения между двумя пользователями + отметить как прочитанные
-//
 router.get("/:currentUserId/:targetUserId", async (req, res) => {
   const { currentUserId, targetUserId } = req.params;
 
@@ -64,8 +54,8 @@ router.get("/:currentUserId/:targetUserId", async (req, res) => {
     const result = await pool.query(
       `
       ${dialogSelect}
-      WHERE (sender_id=$1 AND receiver_id=$2)
-         OR (sender_id=$2 AND receiver_id=$1)
+      WHERE (sender_id = $1 AND receiver_id = $2)
+         OR (sender_id = $2 AND receiver_id = $1)
       ORDER BY created_at ASC
       `,
       [currentUserId, targetUserId]
@@ -78,16 +68,15 @@ router.get("/:currentUserId/:targetUserId", async (req, res) => {
   }
 });
 
-//
-// ✉️ Отправить сообщение
-//
 router.post("/", async (req, res) => {
   const { senderId, receiverId, text } = req.body;
 
   try {
+    const safeSenderId = Number(senderId);
+    const safeReceiverId = Number(receiverId);
     const normalizedText = String(text || "").trim();
 
-    if (!senderId || !receiverId || !normalizedText) {
+    if (!safeSenderId || !safeReceiverId || !normalizedText) {
       return res.status(400).json({ message: "Нет данных для отправки" });
     }
 
@@ -99,7 +88,7 @@ router.post("/", async (req, res) => {
 
     const follow = await pool.query(
       "SELECT 1 FROM follows WHERE follower_id=$1 AND following_id=$2",
-      [senderId, receiverId]
+      [safeSenderId, safeReceiverId]
     );
 
     if (follow.rows.length === 0) {
@@ -130,12 +119,12 @@ router.post("/", async (req, res) => {
         deleted_by AS "deletedBy",
         created_at AS "createdAt"
       `,
-      [senderId, receiverId, normalizedText, normalizedText]
+      [safeSenderId, safeReceiverId, normalizedText, normalizedText]
     );
 
     const senderUser = await pool.query(
       "SELECT username FROM users WHERE id=$1",
-      [senderId]
+      [safeSenderId]
     );
 
     const senderName = senderUser.rows[0]?.username || "Пользователь";
@@ -145,27 +134,25 @@ router.post("/", async (req, res) => {
       INSERT INTO notifications (user_id, from_user_id, type, text)
       VALUES ($1, $2, $3, $4)
       `,
-      [receiverId, senderId, "message", `${senderName} отправил вам сообщение`]
+      [safeReceiverId, safeSenderId, "message", `${senderName} отправил вам сообщение`]
     );
 
-    res.json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     console.log("SEND MESSAGE ERROR:", err);
-    res.status(500).json({ error: "Ошибка" });
+    res.status(500).json({ error: "Ошибка отправки" });
   }
 });
 
-//
-// ✏️ Изменить сообщение
-//
 router.put("/:messageId/edit", async (req, res) => {
   const { messageId } = req.params;
   const { userId, text } = req.body;
 
   try {
+    const safeUserId = Number(userId);
     const normalizedText = String(text || "").trim();
 
-    if (!userId || !normalizedText) {
+    if (!safeUserId || !normalizedText) {
       return res.status(400).json({ message: "Нет данных" });
     }
 
@@ -186,7 +173,7 @@ router.put("/:messageId/edit", async (req, res) => {
 
     const message = check.rows[0];
 
-    if (String(message.sender_id) !== String(userId)) {
+    if (String(message.sender_id) !== String(safeUserId)) {
       return res.status(403).json({ message: "Нет доступа" });
     }
 
@@ -227,21 +214,20 @@ router.put("/:messageId/edit", async (req, res) => {
   }
 });
 
-//
-// 🗑️ Удалить сообщение
-//
 router.put("/:messageId/delete", async (req, res) => {
   const { messageId } = req.params;
   const { userId } = req.body;
 
   try {
-    if (!userId) {
+    const safeUserId = Number(userId);
+
+    if (!safeUserId) {
       return res.status(400).json({ message: "Нет userId" });
     }
 
     const userRes = await pool.query(
       "SELECT id, role FROM users WHERE id=$1",
-      [userId]
+      [safeUserId]
     );
 
     const msgRes = await pool.query(
@@ -285,7 +271,7 @@ router.put("/:messageId/delete", async (req, res) => {
         deleted_by AS "deletedBy",
         created_at AS "createdAt"
       `,
-      [userId, messageId]
+      [safeUserId, messageId]
     );
 
     res.json(result.rows[0]);
@@ -295,21 +281,20 @@ router.put("/:messageId/delete", async (req, res) => {
   }
 });
 
-//
-// ♻️ Восстановить сообщение (только owner)
-//
 router.put("/:messageId/restore", async (req, res) => {
   const { messageId } = req.params;
   const { userId } = req.body;
 
   try {
-    if (!userId) {
+    const safeUserId = Number(userId);
+
+    if (!safeUserId) {
       return res.status(400).json({ message: "Нет userId" });
     }
 
     const userRes = await pool.query(
       "SELECT role FROM users WHERE id=$1",
-      [userId]
+      [safeUserId]
     );
 
     if (!userRes.rows.length || userRes.rows[0].role !== "owner") {
@@ -354,9 +339,6 @@ router.put("/:messageId/restore", async (req, res) => {
   }
 });
 
-//
-// 🧹 Очистить весь диалог
-//
 router.delete("/dialog/:currentUserId/:targetUserId", async (req, res) => {
   const { currentUserId, targetUserId } = req.params;
 

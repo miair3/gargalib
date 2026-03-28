@@ -424,73 +424,73 @@ const Profile = () => {
   };
 
   const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Выбери изображение");
+  if (!file.type.startsWith("image/")) {
+    alert("Выбери изображение");
+    return;
+  }
+
+  setSelectedAvatarFile(file);
+
+  const reader = new FileReader();
+
+  reader.onloadend = () => {
+    setAvatarDirty(true);
+    setUser((prev) => ({
+      ...prev,
+      avatar: reader.result,
+    }));
+  };
+
+  reader.readAsDataURL(file);
+};
+
+const saveProfile = async () => {
+  try {
+    const currentUser = getCurrentUser();
+
+    const res = await fetch(`${API_BASE}/api/users/update`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.id,
+        username: newName.trim() || user.username,
+        avatar: user.avatar || currentUser?.avatar || "",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success || !data.user) {
+      alert(data.message || "Ошибка сохранения");
       return;
     }
 
-    setSelectedAvatarFile(file);
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setAvatarDirty(true);
-      setUser((prev) => ({
-        ...prev,
-        avatar: reader.result,
-      }));
+    const updatedUser = {
+      ...user,
+      ...data.user,
+      avatar:
+        data.user.avatar ||
+        user.avatar ||
+        currentUser?.avatar ||
+        "",
     };
 
-    reader.readAsDataURL(file);
-  };
-
-  const saveProfile = async () => {
-    try {
-      const currentUser = getCurrentUser();
-
-      const res = await fetch(`${API_BASE}/api/users/update`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          username: newName.trim() || user.username,
-          avatar: user.avatar || currentUser?.avatar || "",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success || !data.user) {
-        alert(data.message || "Ошибка сохранения");
-        return;
-      }
-
-      const updatedUser = {
-        ...user,
-        ...data.user,
-        avatar:
-          data.user.avatar ||
-          user.avatar ||
-          currentUser?.avatar ||
-          "",
-      };
-
-      setUser(updatedUser);
-      setSelectedAvatarFile(null);
-      setAvatarDirty(false);
-      setNewName(updatedUser.username || "");
-      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-      window.dispatchEvent(new Event("userChanged"));
-      setEdit(false);
-      alert("Профиль обновлён");
-    } catch (err) {
-      console.log(err);
-      alert("Ошибка сохранения");
-    }
-  };
+    setUser(updatedUser);
+    setSelectedAvatarFile(null);
+    setAvatarDirty(false);
+    setNewName(updatedUser.username || "");
+    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+    window.dispatchEvent(new Event("userChanged"));
+    setEdit(false);
+    alert("Профиль обновлён");
+  } catch (err) {
+    console.log(err);
+    alert("Ошибка сохранения");
+  }
+};
 
   const roleBadge = {
     owner: "bg-gradient-to-r from-yellow-400 to-orange-500 text-black",

@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { getStorage } from "./storage";
 
 import HomeLogin from "./pages/HomeLogin";
@@ -25,7 +25,7 @@ export default function App() {
   const until = currentUser?.banUntil || null;
 
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomeLogin />} />
         <Route path="/login" element={<Login />} />
@@ -146,6 +146,6 @@ export default function App() {
           }
         />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

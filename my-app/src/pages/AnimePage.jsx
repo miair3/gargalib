@@ -659,39 +659,49 @@ const AnimePage = () => {
   };
 
   const markAsWatched = () => {
-    const currentUserId = getCurrentUserId();
-    if (!currentUserId || !contentId || isJikan || banInfo.banned) return;
+  const currentUserId = getCurrentUserId();
+  if (!currentUserId || !contentId || isJikan || banInfo.banned) return;
 
-    const key = `watched_${currentUserId}`;
-    const watched = JSON.parse(localStorage.getItem(key)) || [];
+  const key = `watched_${currentUserId}`;
+  const watched = JSON.parse(localStorage.getItem(key)) || [];
 
-    if (!watched.map(String).includes(String(contentId))) {
-      watched.push(contentId);
-      localStorage.setItem(key, JSON.stringify(watched));
-    }
-  };
+  if (!watched.map(String).includes(String(contentId))) {
+    watched.push(String(contentId));
+    localStorage.setItem(key, JSON.stringify(watched));
+    window.dispatchEvent(new Event("userChanged"));
+  }
+};
 
   const playEpisode = (video, index) => {
-    if (!video || banInfo.banned) return;
-    setCurrentVideo(video);
-    setCurrentIndex(index);
-  };
+  if (!video || banInfo.banned) return;
 
-  const nextEpisode = () => {
-    if (currentIndex !== null && currentIndex < episodes.length - 1) {
-      const next = currentIndex + 1;
-      setCurrentVideo(episodes[next].video || episodes[next].video_url);
-      setCurrentIndex(next);
-    }
-  };
+  markAsWatched();
 
-  const prevEpisode = () => {
-    if (currentIndex !== null && currentIndex > 0) {
-      const prev = currentIndex - 1;
-      setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
-      setCurrentIndex(prev);
-    }
-  };
+  setCurrentVideo(video);
+  setCurrentIndex(index);
+};
+
+const nextEpisode = () => {
+  if (currentIndex !== null && currentIndex < episodes.length - 1) {
+    const next = currentIndex + 1;
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[next].video || episodes[next].video_url);
+    setCurrentIndex(next);
+  }
+};
+
+const prevEpisode = () => {
+  if (currentIndex !== null && currentIndex > 0) {
+    const prev = currentIndex - 1;
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
+    setCurrentIndex(prev);
+  }
+};
 
   const handleVideoEnd = () => {
     if (currentIndex === null) return;

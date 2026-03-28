@@ -26,6 +26,7 @@ const Profile = () => {
   const [newName, setNewName] = useState("");
   const [watchedIds, setWatchedIds] = useState([]);
   const [favoriteAnime, setFavoriteAnime] = useState([]);
+  const [watchedAnime, setWatchedAnime] = useState([]);
   const [stats, setStats] = useState({ watched: 0, favorites: 0, uploaded: 0 });
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [avatarDirty, setAvatarDirty] = useState(false);
@@ -137,8 +138,6 @@ const Profile = () => {
       return [];
     }
   };
-
-  const [watchedAnime, setWatchedAnime] = useState([]);
 
   const openConnectionsModal = async (type) => {
     try {
@@ -598,15 +597,19 @@ const Profile = () => {
           <div
             key={anime.id}
             onClick={() => navigate(`/anime/${anime.id}`)}
-            className="cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/10 transition hover:scale-[1.01]"
+            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-white/10 transition duration-500 hover:-translate-y-1 hover:scale-[1.01] hover:border-fuchsia-300/30"
           >
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_32%)] opacity-80" />
             <img
               src={anime.image || "https://placehold.co/400x300?text=Anime"}
               alt={anime.title}
-              className="h-48 w-full object-cover"
+              className="h-48 w-full object-cover transition duration-700 group-hover:scale-110"
             />
-            <div className="p-4">
-              <p className="font-bold text-white">{anime.title}</p>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#090d1d] via-[#090d1d]/15 to-transparent" />
+            <div className="relative p-4">
+              <p className="font-bold text-white transition group-hover:text-pink-300">
+                {anime.title}
+              </p>
               <p className="mt-1 text-xs text-white/50">{anime.genre || "Без жанра"}</p>
             </div>
           </div>
@@ -617,326 +620,444 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
-        <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl" />
-        <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl" />
-        <div className="relative flex min-h-screen items-center justify-center">
-          <div className="rounded-3xl border border-white/10 bg-white/10 px-8 py-5 text-lg backdrop-blur-2xl shadow-2xl">
-            Загрузка профиля...
+      <>
+        <style>{`
+          @keyframes floatSoft {
+            0%,100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-14px) translateX(8px); }
+          }
+          @keyframes twinkle {
+            0%,100% { opacity: .25; transform: scale(.8); }
+            50% { opacity: 1; transform: scale(1.3); }
+          }
+          @keyframes glowPulse {
+            0%,100% { opacity: .45; transform: scale(1); }
+            50% { opacity: .9; transform: scale(1.12); }
+          }
+        `}</style>
+        <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
+          <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl animate-[floatSoft_10s_ease-in-out_infinite]" />
+          <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl animate-[floatSoft_13s_ease-in-out_infinite]" />
+          <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl animate-[glowPulse_9s_ease-in-out_infinite]" />
+          <div className="relative flex min-h-screen items-center justify-center">
+            <div className="rounded-3xl border border-white/10 bg-white/10 px-8 py-5 text-lg backdrop-blur-2xl shadow-2xl">
+              Загрузка профиля...
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
-      <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl" />
-      <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl" />
-      <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:70px_70px] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.55),transparent)]" />
+    <>
+      <style>{`
+        @keyframes floatSoft {
+          0%,100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(-14px) translateX(8px); }
+        }
+        @keyframes floatSoftReverse {
+          0%,100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(12px) translateX(-10px); }
+        }
+        @keyframes twinkle {
+          0%,100% { opacity: .25; transform: scale(.8); }
+          50% { opacity: 1; transform: scale(1.3); }
+        }
+        @keyframes glowPulse {
+          0%,100% { opacity: .45; transform: scale(1); }
+          50% { opacity: .9; transform: scale(1.12); }
+        }
+        @keyframes cardReveal {
+          from { opacity: 0; transform: translateY(20px) scale(.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-2xl">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-            <div className="relative mx-auto lg:mx-0">
-              <img
-                src={user.avatar || getDefaultAvatar(user.username || "User")}
-                alt="avatar"
-                className="h-32 w-32 rounded-full border-4 border-white/20 object-cover shadow-2xl sm:h-36 sm:w-36"
-              />
-              {edit && (
-                <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-pink-500 text-lg shadow-xl hover:scale-105">
-                  📷
-                  <input type="file" accept="image/*" hidden onChange={handleAvatarChange} />
-                </label>
-              )}
-            </div>
+      <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
+        <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl animate-[floatSoft_10s_ease-in-out_infinite]" />
+        <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl animate-[floatSoftReverse_14s_ease-in-out_infinite]" />
+        <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl animate-[glowPulse_9s_ease-in-out_infinite]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:70px_70px] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.55),transparent)]" />
 
-            <div className="flex-1 text-center lg:text-left">
-              {edit ? (
-                <div className="mt-2">
-                  <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/40">
-                    Изменить ник
-                  </p>
-                  <input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    maxLength={30}
-                    className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-white/30"
-                    placeholder="Введите новый ник"
-                  />
-                </div>
-              ) : (
-                <h1 className="text-3xl font-extrabold sm:text-4xl">
-                  {user.username || "Пользователь"}
-                </h1>
-              )}
+        {Array.from({ length: 18 }).map((_, i) => (
+          <span
+            key={i}
+            className="absolute block rounded-full bg-white"
+            style={{
+              width: `${(i % 3) + 2}px`,
+              height: `${(i % 3) + 2}px`,
+              left: `${(i * 13) % 100}%`,
+              top: `${(i * 17) % 100}%`,
+              boxShadow: "0 0 12px rgba(255,255,255,0.95)",
+              animation: `twinkle ${2.4 + (i % 4)}s ease-in-out ${i * 0.18}s infinite`,
+            }}
+          />
+        ))}
 
-              <p className="mt-2 break-all text-sm text-white/55 sm:text-base">{user.email}</p>
-
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                <span
-                  className={`inline-block rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-widest ${
-                    roleBadge[user.role] || roleBadge.user
-                  }`}
-                >
-                  {user.role}
-                </span>
-
-                {selectedAvatarFile && edit && (
-                  <span className="rounded-full border border-white/10 bg-white/10 px-4 py-1 text-xs text-white/70">
-                    Выбрано: {selectedAvatarFile.name}
-                  </span>
+        <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
+          <div className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-2xl [animation:cardReveal_.55s_ease]">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+              <div className="relative mx-auto lg:mx-0">
+                <div className="absolute inset-[-14px] rounded-full bg-gradient-to-r from-pink-500/25 to-cyan-400/25 blur-2xl" />
+                <img
+                  src={user.avatar || getDefaultAvatar(user.username || "User")}
+                  alt="avatar"
+                  className="relative h-32 w-32 rounded-full border-4 border-white/20 object-cover shadow-2xl sm:h-36 sm:w-36"
+                />
+                {edit && (
+                  <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-pink-500 text-lg shadow-xl hover:scale-105">
+                    📷
+                    <input type="file" accept="image/*" hidden onChange={handleAvatarChange} />
+                  </label>
                 )}
               </div>
-            </div>
 
-            <div className="flex shrink-0 flex-wrap justify-center gap-3 lg:flex-col">
-              <button
-                onClick={() => (edit ? saveProfile() : setEdit(true))}
-                disabled={savingProfile}
-                className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:scale-105 disabled:opacity-60"
-              >
-                {savingProfile ? "Сохранение..." : edit ? "Сохранить" : "Редактировать"}
-              </button>
-
-              {edit && (
-                <button
-                  onClick={() => {
-                    setEdit(false);
-                    setAvatarDirty(false);
-                    setSelectedAvatarFile(null);
-                    loadCurrentProfile({ silent: true });
-                  }}
-                  className="rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-semibold text-white/85"
-                >
-                  Отмена
-                </button>
-              )}
-
-              <button
-                onClick={logout}
-                className="rounded-2xl border border-red-500/30 bg-red-500/15 px-5 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/25"
-              >
-                Выйти
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className={`mt-6 grid gap-4 ${statsCards.length === 5 ? "grid-cols-2 lg:grid-cols-5" : "grid-cols-2 lg:grid-cols-4"}`}>
-          {statsCards.map(({ value, label, icon, clickType }) => {
-            const clickable = clickType === "followers" || clickType === "following";
-
-            return (
-              <button
-                key={label}
-                type="button"
-                onClick={() => clickable && openConnectionsModal(clickType)}
-                className={`rounded-2xl border border-white/10 bg-white/10 p-5 text-center shadow-xl ${
-                  clickable ? "cursor-pointer" : "cursor-default"
-                }`}
-              >
-                <div className="mb-2 text-3xl">{icon}</div>
-                <div className="text-3xl font-extrabold text-white">{value}</div>
-                <div className="mt-1 text-xs uppercase tracking-[0.24em] text-white/55">
-                  {label}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-3 shadow-xl">
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            {[
-              { key: "profile", label: "Профиль" },
-              { key: "history", label: "История" },
-              { key: "favorites", label: "Избранное" },
-              ...(user.role === "owner" ? [{ key: "admin", label: "Админка" }] : []),
-            ].map((item) => (
-              <button
-                key={item.key}
-                onClick={() => setTab(item.key)}
-                className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
-                  tab === item.key
-                    ? "bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-white"
-                    : "border border-white/10 bg-white/10 text-white/85"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {tab === "profile" && (
-          <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl">
-            <h2 className="text-2xl font-extrabold sm:text-3xl">Центр профиля</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base">
-              Здесь можно менять ник, аватар, смотреть избранное и историю просмотра.
-            </p>
-
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-                <p className="text-sm font-bold text-white">Профиль</p>
-                <div className="mt-3 space-y-2 text-sm text-white/70">
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Роль</span>
-                    <span className="font-semibold text-white">{user.role}</span>
+              <div className="flex-1 text-center lg:text-left">
+                {edit ? (
+                  <div className="mt-2">
+                    <p className="mb-2 text-xs uppercase tracking-[0.2em] text-white/40">
+                      Изменить ник
+                    </p>
+                    <input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      maxLength={30}
+                      className="w-full max-w-sm rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none placeholder:text-white/30"
+                      placeholder="Введите новый ник"
+                    />
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Подписчики</span>
-                    <span className="font-semibold text-white">{user.followers || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Подписки</span>
-                    <span className="font-semibold text-white">{user.following || 0}</span>
-                  </div>
-                </div>
-              </div>
+                ) : (
+                  <h1 className="bg-gradient-to-r from-pink-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl">
+                    {user.username || "Пользователь"}
+                  </h1>
+                )}
 
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-                <p className="text-sm font-bold text-white">Архив</p>
-                <div className="mt-3 space-y-2 text-sm text-white/70">
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Просмотрено</span>
-                    <span className="font-semibold text-white">{stats.watched}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Избранное</span>
-                    <span className="font-semibold text-white">{stats.favorites}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
-                    <span>Загружено</span>
-                    <span className="font-semibold text-white">
-                      {user.role === "admin" || user.role === "owner" ? stats.uploaded : "—"}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                <p className="mt-2 break-all text-sm text-white/55 sm:text-base">{user.email}</p>
 
-              <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-                <p className="text-sm font-bold text-white">Подсказка</p>
-                <div className="mt-3 space-y-3 text-sm leading-6 text-white/70">
-                  <div className="rounded-2xl bg-white/5 px-3 py-3">
-                    Для аватарки лучше выбирать обычную картинку JPG или PNG.
-                  </div>
-                  <div className="rounded-2xl bg-white/5 px-3 py-3">
-                    После изменения нажми <span className="font-semibold text-white">Сохранить</span>.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "history" && (
-          <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl">
-            <h2 className="mb-6 text-2xl font-extrabold sm:text-3xl">История просмотра</h2>
-            {renderAnimeGrid(watchedAnime, "История просмотра пока пуста")}
-          </div>
-        )}
-
-        {tab === "favorites" && (
-          <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl">
-            <h2 className="mb-6 text-2xl font-extrabold sm:text-3xl">Избранное</h2>
-            {renderAnimeGrid(favoriteAnime, "В избранном пока ничего нет")}
-          </div>
-        )}
-
-        {tab === "admin" && user.role === "owner" && (
-          <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 shadow-2xl">
-            <div className="flex items-center gap-3 border-b border-white/10 px-6 py-5 sm:px-8">
-              <h2 className="text-lg font-bold tracking-tight sm:text-xl">Панель управления</h2>
-              <span className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
-                {users.length} пользователей
-              </span>
-            </div>
-
-            <div className="space-y-6 p-6 sm:p-8">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  placeholder="Поиск по email..."
-                  value={searchEmail}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearchUser()}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/30"
-                />
-                <button
-                  onClick={handleSearchUser}
-                  className="rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-3 text-sm font-semibold"
-                >
-                  Найти
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {displayUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/8 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                  <span
+                    className={`inline-block rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-widest ${
+                      roleBadge[user.role] || roleBadge.user
+                    }`}
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <img
-                        src={u.avatar || getDefaultAvatar(u.username || "User")}
-                        alt={u.username}
-                        className="h-11 w-11 shrink-0 rounded-full border border-white/10 object-cover"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white sm:text-base">
-                          {u.username}
-                        </p>
-                        <p className="truncate text-xs text-white/40 sm:text-sm">
-                          {u.email}
-                        </p>
+                    {user.role}
+                  </span>
+
+                  {selectedAvatarFile && edit && (
+                    <span className="rounded-full border border-white/10 bg-white/10 px-4 py-1 text-xs text-white/70">
+                      Выбрано: {selectedAvatarFile.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex shrink-0 flex-wrap justify-center gap-3 lg:flex-col">
+                <button
+                  onClick={() => (edit ? saveProfile() : setEdit(true))}
+                  disabled={savingProfile}
+                  className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white shadow-xl transition hover:scale-105 disabled:opacity-60"
+                >
+                  {savingProfile ? "Сохранение..." : edit ? "Сохранить" : "Редактировать"}
+                </button>
+
+                {edit && (
+                  <button
+                    onClick={() => {
+                      setEdit(false);
+                      setAvatarDirty(false);
+                      setSelectedAvatarFile(null);
+                      loadCurrentProfile({ silent: true });
+                    }}
+                    className="rounded-2xl border border-white/10 bg-white/10 px-5 py-3 text-sm font-semibold text-white/85"
+                  >
+                    Отмена
+                  </button>
+                )}
+
+                <button
+                  onClick={logout}
+                  className="rounded-2xl border border-red-500/30 bg-red-500/15 px-5 py-3 text-sm font-semibold text-red-300 hover:bg-red-500/25"
+                >
+                  Выйти
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className={`mt-6 grid gap-4 ${statsCards.length === 5 ? "grid-cols-2 lg:grid-cols-5" : "grid-cols-2 lg:grid-cols-4"}`}>
+            {statsCards.map(({ value, label, icon, clickType }, index) => {
+              const clickable = clickType === "followers" || clickType === "following";
+
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => clickable && openConnectionsModal(clickType)}
+                  className={`rounded-2xl border border-white/10 bg-white/10 p-5 text-center shadow-xl transition hover:-translate-y-1 ${
+                    clickable ? "cursor-pointer" : "cursor-default"
+                  }`}
+                  style={{
+                    animation: `cardReveal .55s ease ${index * 0.06}s both`,
+                  }}
+                >
+                  <div className="mb-2 text-3xl">{icon}</div>
+                  <div className="text-3xl font-extrabold text-white">{value}</div>
+                  <div className="mt-1 text-xs uppercase tracking-[0.24em] text-white/55">
+                    {label}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-3 shadow-xl [animation:cardReveal_.55s_ease_.15s_both]">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              {[
+                { key: "profile", label: "Профиль" },
+                { key: "history", label: "История" },
+                { key: "favorites", label: "Избранное" },
+                ...(user.role === "owner" ? [{ key: "admin", label: "Админка" }] : []),
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => setTab(item.key)}
+                  className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                    tab === item.key
+                      ? "bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-white"
+                      : "border border-white/10 bg-white/10 text-white/85 hover:bg-white/15"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {tab === "profile" && (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl [animation:cardReveal_.55s_ease_.2s_both]">
+              <h2 className="text-2xl font-extrabold sm:text-3xl">Центр профиля</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/65 sm:text-base">
+                Здесь можно менять ник, аватар, смотреть избранное и историю просмотра.
+              </p>
+
+              <div className="mt-8 grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                  <p className="text-sm font-bold text-white">Профиль</p>
+                  <div className="mt-3 space-y-2 text-sm text-white/70">
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Роль</span>
+                      <span className="font-semibold text-white">{user.role}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Подписчики</span>
+                      <span className="font-semibold text-white">{user.followers || 0}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Подписки</span>
+                      <span className="font-semibold text-white">{user.following || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                  <p className="text-sm font-bold text-white">Архив</p>
+                  <div className="mt-3 space-y-2 text-sm text-white/70">
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Просмотрено</span>
+                      <span className="font-semibold text-white">{stats.watched}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Избранное</span>
+                      <span className="font-semibold text-white">{stats.favorites}</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2">
+                      <span>Загружено</span>
+                      <span className="font-semibold text-white">
+                        {user.role === "admin" || user.role === "owner" ? stats.uploaded : "—"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                  <p className="text-sm font-bold text-white">Подсказка</p>
+                  <div className="mt-3 space-y-3 text-sm leading-6 text-white/70">
+                    <div className="rounded-2xl bg-white/5 px-3 py-3">
+                      Для аватарки лучше выбирать обычную картинку JPG или PNG.
+                    </div>
+                    <div className="rounded-2xl bg-white/5 px-3 py-3">
+                      После изменения нажми <span className="font-semibold text-white">Сохранить</span>.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "history" && (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl [animation:cardReveal_.55s_ease_.2s_both]">
+              <h2 className="mb-6 text-2xl font-extrabold sm:text-3xl">История просмотра</h2>
+              {renderAnimeGrid(watchedAnime, "История просмотра пока пуста")}
+            </div>
+          )}
+
+          {tab === "favorites" && (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl [animation:cardReveal_.55s_ease_.2s_both]">
+              <h2 className="mb-6 text-2xl font-extrabold sm:text-3xl">Избранное</h2>
+              {renderAnimeGrid(favoriteAnime, "В избранном пока ничего нет")}
+            </div>
+          )}
+
+          {tab === "admin" && user.role === "owner" && (
+            <div className="mt-6 rounded-3xl border border-white/10 bg-white/10 shadow-2xl [animation:cardReveal_.55s_ease_.2s_both]">
+              <div className="flex items-center gap-3 border-b border-white/10 px-6 py-5 sm:px-8">
+                <h2 className="text-lg font-bold tracking-tight sm:text-xl">Панель управления</h2>
+                <span className="ml-auto rounded-full bg-white/10 px-3 py-1 text-xs text-white/50">
+                  {users.length} пользователей
+                </span>
+              </div>
+
+              <div className="space-y-6 p-6 sm:p-8">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    placeholder="Поиск по email..."
+                    value={searchEmail}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchUser()}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/30"
+                  />
+                  <button
+                    onClick={handleSearchUser}
+                    className="rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 px-5 py-3 text-sm font-semibold"
+                  >
+                    Найти
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {displayUsers.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex flex-col gap-4 rounded-2xl border border-white/8 bg-white/8 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <img
+                          src={u.avatar || getDefaultAvatar(u.username || "User")}
+                          alt={u.username}
+                          className="h-11 w-11 shrink-0 rounded-full border border-white/10 object-cover"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white sm:text-base">
+                            {u.username}
+                          </p>
+                          <p className="truncate text-xs text-white/40 sm:text-sm">
+                            {u.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                            roleBadge[u.role] || roleBadge.user
+                          }`}
+                        >
+                          {u.role}
+                        </span>
+
+                        {u.role !== "admin" && u.role !== "owner" && (
+                          <button
+                            onClick={() => makeAdmin(u.id)}
+                            className="rounded-xl border border-emerald-500/30 bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-300"
+                          >
+                            + Admin
+                          </button>
+                        )}
+
+                        {u.role === "admin" && (
+                          <button
+                            onClick={() => removeAdmin(u.id)}
+                            className="rounded-xl border border-yellow-500/30 bg-yellow-500/20 px-3 py-2 text-xs font-semibold text-yellow-300"
+                          >
+                            Убрать
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => deleteUser(u.id)}
+                          className="rounded-xl border border-red-500/30 bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300"
+                        >
+                          Удалить
+                        </button>
                       </div>
                     </div>
+                  ))}
 
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <span
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
-                          roleBadge[u.role] || roleBadge.user
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-
-                      {u.role !== "admin" && u.role !== "owner" && (
-                        <button
-                          onClick={() => makeAdmin(u.id)}
-                          className="rounded-xl border border-emerald-500/30 bg-emerald-500/20 px-3 py-2 text-xs font-semibold text-emerald-300"
-                        >
-                          + Admin
-                        </button>
-                      )}
-
-                      {u.role === "admin" && (
-                        <button
-                          onClick={() => removeAdmin(u.id)}
-                          className="rounded-xl border border-yellow-500/30 bg-yellow-500/20 px-3 py-2 text-xs font-semibold text-yellow-300"
-                        >
-                          Убрать
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => deleteUser(u.id)}
-                        className="rounded-xl border border-red-500/30 bg-red-500/20 px-3 py-2 text-xs font-semibold text-red-300"
-                      >
-                        Удалить
-                      </button>
+                  {displayUsers.length === 0 && (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-14 text-center text-sm text-white/40">
+                      Пользователи не найдены
                     </div>
-                  </div>
-                ))}
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
-                {displayUsers.length === 0 && (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-14 text-center text-sm text-white/40">
-                    Пользователи не найдены
+        {connectionsModal.open && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/55 p-4 backdrop-blur-md"
+            onClick={closeConnectionsModal}
+          >
+            <div
+              className="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-[#0b1020] shadow-[0_25px_90px_rgba(0,0,0,0.55)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5 sm:px-7">
+                <div>
+                  <h3 className="text-2xl font-extrabold text-white">{connectionsModal.title}</h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeConnectionsModal}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/10 text-xl text-white/80"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="max-h-[65vh] overflow-y-auto px-5 py-5 sm:px-7">
+                {connectionsModal.loading ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center text-white/60">
+                    Загрузка...
+                  </div>
+                ) : connectionsModal.users.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center text-white/60">
+                    Список пуст
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {connectionsModal.users.map((u) => (
+                      <button
+                        key={u.id}
+                        onClick={() => openUserProfile(u.id)}
+                        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/10"
+                      >
+                        <img
+                          src={u.avatar || getDefaultAvatar(u.username || "User")}
+                          alt={u.username}
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-white">{u.username}</p>
+                          <p className="truncate text-sm text-white/50">{u.email}</p>
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -944,65 +1065,7 @@ const Profile = () => {
           </div>
         )}
       </div>
-
-      {connectionsModal.open && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/55 p-4 backdrop-blur-md"
-          onClick={closeConnectionsModal}
-        >
-          <div
-            className="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-[#0b1020] shadow-[0_25px_90px_rgba(0,0,0,0.55)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-5 sm:px-7">
-              <div>
-                <h3 className="text-2xl font-extrabold text-white">{connectionsModal.title}</h3>
-              </div>
-
-              <button
-                type="button"
-                onClick={closeConnectionsModal}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/10 text-xl text-white/80"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="max-h-[65vh] overflow-y-auto px-5 py-5 sm:px-7">
-              {connectionsModal.loading ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center text-white/60">
-                  Загрузка...
-                </div>
-              ) : connectionsModal.users.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-10 text-center text-white/60">
-                  Список пуст
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {connectionsModal.users.map((u) => (
-                    <button
-                      key={u.id}
-                      onClick={() => openUserProfile(u.id)}
-                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:bg-white/10"
-                    >
-                      <img
-                        src={u.avatar || getDefaultAvatar(u.username || "User")}
-                        alt={u.username}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-white">{u.username}</p>
-                        <p className="truncate text-sm text-white/50">{u.email}</p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 };
 

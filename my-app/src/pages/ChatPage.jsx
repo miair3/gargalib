@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+const API_BASE = "https://gargalib-backend.onrender.com";
 const MAX_MESSAGE_LENGTH = 4096;
 
 const ChatPage = () => {
@@ -65,7 +66,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
+        `${API_BASE}/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
         {
           method: "GET",
           cache: "no-store",
@@ -114,7 +115,7 @@ const ChatPage = () => {
       try {
         setLoading(true);
 
-        const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${targetUserId}`);
+        const res = await fetch(`${API_BASE}/api/users/${targetUserId}`);
         const data = await res.json();
 
         if (!res.ok || data.message) {
@@ -186,7 +187,7 @@ const ChatPage = () => {
     try {
       setSendError("");
 
-      const res = await fetch("https://gargalib-backend.onrender.com/api/messages", {
+      const res = await fetch(`${API_BASE}/api/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -219,7 +220,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/dialog/${currentUserId}/${selectedUserId}`,
+        `${API_BASE}/api/messages/dialog/${currentUserId}/${selectedUserId}`,
         { method: "DELETE" }
       );
 
@@ -260,7 +261,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/delete`,
+        `${API_BASE}/api/messages/${activeMessage.id}/delete`,
         {
           method: "PUT",
           headers: {
@@ -315,7 +316,7 @@ const ChatPage = () => {
       setEditError("");
 
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${editingMessageId}/edit`,
+        `${API_BASE}/api/messages/${editingMessageId}/edit`,
         {
           method: "PUT",
           headers: {
@@ -360,7 +361,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/restore`,
+        `${API_BASE}/api/messages/${activeMessage.id}/restore`,
         {
           method: "PUT",
           headers: {
@@ -421,7 +422,7 @@ const ChatPage = () => {
 
   if (!selectedUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#070b18] via-[#151a43] to-[#3e0f60] text-white">
+      <div className="min-h-screen flex items-center justify-center bg-[#060816] text-white">
         <div className="rounded-3xl border border-white/10 bg-white/10 px-8 py-5 backdrop-blur-2xl shadow-2xl">
           Пользователь не найден
         </div>
@@ -430,263 +431,196 @@ const ChatPage = () => {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-gradient-to-br from-[#070b18] via-[#151a43] to-[#3e0f60] text-white">
-      <div className="absolute left-6 top-10 h-72 w-72 rounded-full bg-pink-500/20 blur-3xl"></div>
-      <div className="absolute right-10 top-10 h-80 w-80 rounded-full bg-cyan-400/20 blur-3xl"></div>
-      <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-violet-500/20 blur-3xl"></div>
+    <div className="min-h-screen bg-gradient-to-br from-[#070b18] via-[#151a43] to-[#3e0f60] p-4 text-white">
+      <div className="mx-auto flex max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/10 shadow-2xl backdrop-blur-2xl">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm"
+            >
+              Назад
+            </button>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="bg-gradient-to-r from-pink-400 via-fuchsia-300 to-cyan-300 bg-clip-text text-3xl font-extrabold text-transparent sm:text-4xl">
-              Личный чат
-            </h1>
-            <p className="mt-1 text-sm text-slate-300 sm:text-base">
-              Переписка с {selectedUser.username}
-            </p>
+            <img
+              src={
+                selectedUser.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  selectedUser.username || "User"
+                )}`
+              }
+              alt={selectedUser.username}
+              className="h-12 w-12 rounded-full object-cover"
+            />
+
+            <div>
+              <div className="font-bold">{selectedUser.username || "Пользователь"}</div>
+              <div className="text-xs text-white/50">{selectedUser.email || ""}</div>
+            </div>
           </div>
 
           <button
-            onClick={() => navigate(-1)}
-            className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+            onClick={handleDeleteDialog}
+            className="rounded-xl border border-red-500/30 bg-red-500/15 px-3 py-2 text-sm text-red-300"
           >
-            Назад
+            Очистить чат
           </button>
         </div>
 
-        <div className="flex h-[80vh] flex-col overflow-hidden rounded-[34px] border border-white/10 bg-white/10 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-          <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-white/5 px-5 py-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <div className="relative">
-                <img
-                  src={
-                    selectedUser.avatar ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      selectedUser.username || "User"
-                    )}`
-                  }
-                  alt={selectedUser.username}
-                  className="h-14 w-14 rounded-full border border-white/10 object-cover"
-                />
-                <span
-                  className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#1c214f] ${
-                    selectedUser.is_online ? "bg-emerald-400" : "bg-slate-500"
-                  }`}
-                ></span>
-              </div>
-
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-bold text-white sm:text-xl">
-                  {selectedUser.username}
-                </h2>
-                <p className="text-xs text-slate-400 sm:text-sm">
-                  {selectedUser.is_online ? "Сейчас в сети" : "Не в сети"}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleDeleteDialog}
-              className="rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
-            >
-              Очистить чат
-            </button>
-          </div>
-
-          <div
-            className="flex-1 overflow-y-auto px-4 py-6 sm:px-6"
-            style={{
-              backgroundImage:
-                "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)",
-              backgroundSize: "22px 22px",
-            }}
-          >
-            {messages.length > 0 ? (
-              <div className="space-y-3">
-                {messages.map((msg) => {
-                  const isMine = String(msg.senderId) === currentUserId;
-                  const isEditing = editingMessageId === msg.id;
-
-                  return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        onContextMenu={(e) => openMessageMenu(e, msg)}
-                        onTouchStart={() => startHold(msg)}
-                        onTouchEnd={stopHold}
-                        onTouchMove={stopHold}
-                        onMouseDown={() => startHold(msg)}
-                        onMouseUp={stopHold}
-                        onMouseLeave={stopHold}
-                        className={`max-w-[85%] rounded-[22px] px-3 py-2 shadow-xl sm:max-w-[72%] ${
-                          isMine
-                            ? "rounded-br-md bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-white"
-                            : "rounded-bl-md border border-white/10 bg-white/10 text-white backdrop-blur-xl"
-                        } ${msg.deleted ? "opacity-80 italic" : ""}`}
-                      >
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <textarea
-                              value={editingText}
-                              onChange={(e) => {
-                                setEditingText(e.target.value);
-                                if (editError) setEditError("");
-                              }}
-                              rows={3}
-                              className="w-full resize-none rounded-2xl border border-white/20 bg-black/20 px-3 py-2 text-sm text-white outline-none"
-                            />
-
-                            {editError && (
-                              <p className="text-xs text-red-300">{editError}</p>
-                            )}
-
-                            <div className="flex justify-end gap-2">
-                              <button
-                                onClick={handleCancelEdit}
-                                className="rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white"
-                              >
-                                Отмена
-                              </button>
-                              <button
-                                onClick={handleSaveEditedMessage}
-                                disabled={!editingText.trim() || isEditTooLong}
-                                className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-black disabled:opacity-50"
-                              >
-                                Сохранить
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <p
-                              className={`whitespace-pre-wrap break-words text-[15px] leading-5 sm:text-[16px] ${
-                                msg.deleted ? "text-white/80" : ""
-                              }`}
-                            >
-                              {msg.text}
-                            </p>
-
-                            <div className="mt-1.5 flex items-center justify-end gap-2 text-[11px] text-white/70">
-                              <span>{formatTime(msg.createdAt)}</span>
-                              {msg.edited && !msg.deleted && <span>Изменено</span>}
-                              {isMine && !msg.deleted && (
-                                <span>{msg.read ? "Прочитано" : "Отправлено"}</span>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={endRef} />
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center text-center">
-                <div className="rounded-[28px] border border-white/10 bg-white/10 px-8 py-8 backdrop-blur-xl">
-                  <h3 className="text-xl font-bold text-white sm:text-2xl">
-                    Чат пуст
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-400 sm:text-base">
-                    Напишите первое сообщение пользователю {selectedUser.username}
-                  </p>
-                </div>
+        <div className="h-[60vh] overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="space-y-3">
+            {messages.length === 0 && (
+              <div className="text-center text-sm text-white/50">
+                Сообщений пока нет
               </div>
             )}
+
+            {messages.map((msg) => {
+              const isMine = String(msg.senderId ?? msg.sender_id) === currentUserId;
+              const isDeleted = Boolean(msg.deleted);
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  onContextMenu={(e) => openMessageMenu(e, msg)}
+                  onTouchStart={() => startHold(msg)}
+                  onTouchEnd={stopHold}
+                  onTouchCancel={stopHold}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${
+                      isMine
+                        ? "bg-pink-500/80 text-white"
+                        : "bg-white/10 text-white"
+                    }`}
+                  >
+                    {editingMessageId === msg.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          className="min-h-[90px] w-full rounded-xl border border-white/10 bg-black/20 p-3 text-white outline-none"
+                        />
+                        {editError && (
+                          <div className="text-xs text-red-300">{editError}</div>
+                        )}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveEditedMessage}
+                            disabled={isEditTooLong}
+                            className="rounded-xl bg-emerald-500 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                          >
+                            Сохранить
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="rounded-xl bg-white/10 px-3 py-2 text-sm"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className={`${isDeleted ? "italic text-white/50" : ""}`}>
+                          {isDeleted
+                            ? msg.text || "Сообщение удалено"
+                            : msg.text || ""}
+                        </div>
+                        <div className="mt-2 text-right text-[11px] text-white/50">
+                          {msg.created_at || msg.createdAt || msg.createdAt
+                            ? formatTime(msg.created_at || msg.createdAt)
+                            : ""}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            <div ref={endRef} />
           </div>
+        </div>
 
-          <div className="border-t border-white/10 bg-white/5 p-4">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <textarea
-                  value={messageText}
-                  onChange={(e) => {
-                    setMessageText(e.target.value);
-                    if (sendError) setSendError("");
-                  }}
-                  placeholder={`Сообщение для ${selectedUser.username}...`}
-                  rows={1}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  className="max-h-36 min-h-[54px] w-full resize-none rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white outline-none transition placeholder:text-slate-400 focus:border-pink-400/40 focus:bg-white/15"
-                />
+        <div className="border-t border-white/10 px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-3">
+            <textarea
+              value={messageText}
+              onChange={(e) => {
+                setMessageText(e.target.value);
+                if (sendError) setSendError("");
+              }}
+              placeholder="Введите сообщение..."
+              className="min-h-[90px] w-full rounded-2xl border border-white/10 bg-black/20 p-4 text-white outline-none placeholder:text-white/30"
+            />
 
-                {sendError && (
-                  <p className="mt-2 text-xs text-red-300">{sendError}</p>
-                )}
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs text-white/50">
+                {[...messageText].length}/{MAX_MESSAGE_LENGTH}
               </div>
 
               <button
                 onClick={handleSendMessage}
                 disabled={!messageText.trim() || isTooLong}
-                className={`rounded-2xl px-6 py-3 text-sm font-bold transition duration-300 ${
-                  messageText.trim() && !isTooLong
-                    ? "bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-white shadow-xl shadow-fuchsia-900/30 hover:scale-105"
-                    : "cursor-not-allowed bg-white/10 text-slate-500"
-                }`}
+                className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
               >
                 Отправить
               </button>
             </div>
+
+            {sendError && <div className="text-sm text-red-300">{sendError}</div>}
           </div>
         </div>
-      </div>
 
-      {showMessageMenu && activeMessage && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-          onClick={() => setShowMessageMenu(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-[28px] border border-white/10 bg-[#171b43]/95 p-4 shadow-2xl backdrop-blur-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="mb-3 text-sm text-slate-300">Действия с сообщением</p>
+        {showMessageMenu && activeMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0c1124] p-4 shadow-2xl">
+              <div className="mb-4 text-lg font-bold text-white">Действия</div>
 
-            <div className="space-y-2">
-              {canEditMessage && (
+              <div className="space-y-2">
+                {canEditMessage && (
+                  <button
+                    onClick={handleStartEditMessage}
+                    className="w-full rounded-2xl bg-white/10 px-4 py-3 text-left"
+                  >
+                    Редактировать
+                  </button>
+                )}
+
+                {canDeleteMessage && (
+                  <button
+                    onClick={handleDeleteMessage}
+                    className="w-full rounded-2xl bg-red-500/20 px-4 py-3 text-left text-red-300"
+                  >
+                    Удалить
+                  </button>
+                )}
+
+                {canRestoreMessage && (
+                  <button
+                    onClick={handleRestoreDeletedMessage}
+                    className="w-full rounded-2xl bg-emerald-500/20 px-4 py-3 text-left text-emerald-300"
+                  >
+                    Восстановить
+                  </button>
+                )}
+
                 <button
-                  onClick={handleStartEditMessage}
-                  className="w-full rounded-2xl bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/15"
+                  onClick={() => {
+                    setShowMessageMenu(false);
+                    setActiveMessage(null);
+                  }}
+                  className="w-full rounded-2xl bg-white/10 px-4 py-3 text-left"
                 >
-                  Изменить сообщение
+                  Закрыть
                 </button>
-              )}
-
-              {canDeleteMessage && (
-                <button
-                  onClick={handleDeleteMessage}
-                  className="w-full rounded-2xl bg-red-500/20 px-4 py-3 text-left text-sm font-semibold text-red-200 transition hover:bg-red-500/30"
-                >
-                  Удалить сообщение
-                </button>
-              )}
-
-              {canRestoreMessage && (
-                <button
-                  onClick={handleRestoreDeletedMessage}
-                  className="w-full rounded-2xl bg-emerald-500/20 px-4 py-3 text-left text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/30"
-                >
-                  Восстановить сообщение
-                </button>
-              )}
-
-              <button
-                onClick={() => setShowMessageMenu(false)}
-                className="w-full rounded-2xl bg-white/10 px-4 py-3 text-left text-sm font-semibold text-white transition hover:bg-white/15"
-              >
-                Закрыть
-              </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

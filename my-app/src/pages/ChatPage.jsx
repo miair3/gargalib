@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+const API_BASE = "https://gargalib-backend.onrender.com";
 const MAX_MESSAGE_LENGTH = 4096;
 
 const ChatPage = () => {
@@ -49,8 +50,23 @@ const ChatPage = () => {
   const isTooLong = [...messageText].length > MAX_MESSAGE_LENGTH;
   const isEditTooLong = [...editingText].length > MAX_MESSAGE_LENGTH;
 
+  const normalizeMessage = (msg) => ({
+    ...msg,
+    id: msg.id,
+    senderId: String(msg.senderId ?? msg.sender_id ?? ""),
+    receiverId: String(msg.receiverId ?? msg.receiver_id ?? ""),
+    text: msg.text ?? "",
+    originalText: msg.originalText ?? msg.original_text ?? msg.text ?? "",
+    deleted: Boolean(msg.deleted),
+    edited: Boolean(msg.edited),
+    read: Boolean(msg.read ?? msg.is_read),
+    createdAt: msg.createdAt ?? msg.created_at ?? null,
+  });
+
   const formatTime = (dateString) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "";
     return date.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -65,7 +81,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
+        `${API_BASE}/api/messages/${currentUserId}/${selectedUserId}?t=${Date.now()}`,
         {
           method: "GET",
           cache: "no-store",
@@ -84,7 +100,9 @@ const ChatPage = () => {
         return;
       }
 
-      const nextMessages = Array.isArray(data) ? data : [];
+      const nextMessages = Array.isArray(data)
+        ? data.map(normalizeMessage)
+        : [];
 
       setMessages((prev) => {
         const prevStr = JSON.stringify(prev);
@@ -114,7 +132,7 @@ const ChatPage = () => {
       try {
         setLoading(true);
 
-        const res = await fetch(`https://gargalib-backend.onrender.com/api/users/${targetUserId}`);
+        const res = await fetch(`${API_BASE}/api/users/${targetUserId}`);
         const data = await res.json();
 
         if (!res.ok || data.message) {
@@ -186,14 +204,14 @@ const ChatPage = () => {
     try {
       setSendError("");
 
-      const res = await fetch("https://gargalib-backend.onrender.com/api/messages", {
+      const res = await fetch(`${API_BASE}/api/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          senderId: currentUserId,
-          receiverId: selectedUserId,
+          senderId: Number(currentUserId),
+          receiverId: Number(selectedUserId),
           text: trimmed,
         }),
       });
@@ -219,7 +237,7 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/dialog/${currentUserId}/${selectedUserId}`,
+        `${API_BASE}/api/messages/dialog/${currentUserId}/${selectedUserId}`,
         { method: "DELETE" }
       );
 
@@ -260,13 +278,13 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/delete`,
+        `${API_BASE}/api/messages/${activeMessage.id}/delete`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ userId: currentUserId }),
+          body: JSON.stringify({ userId: Number(currentUserId) }),
         }
       );
 
@@ -278,7 +296,9 @@ const ChatPage = () => {
       }
 
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === activeMessage.id ? data : msg))
+        prev.map((msg) =>
+          msg.id === activeMessage.id ? normalizeMessage(data) : msg
+        )
       );
       setShowMessageMenu(false);
       setActiveMessage(null);
@@ -315,14 +335,14 @@ const ChatPage = () => {
       setEditError("");
 
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${editingMessageId}/edit`,
+        `${API_BASE}/api/messages/${editingMessageId}/edit`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: currentUserId,
+            userId: Number(currentUserId),
             text: trimmed,
           }),
         }
@@ -337,7 +357,9 @@ const ChatPage = () => {
       }
 
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === editingMessageId ? data : msg))
+        prev.map((msg) =>
+          msg.id === editingMessageId ? normalizeMessage(data) : msg
+        )
       );
       setEditingMessageId(null);
       setEditingText("");
@@ -360,13 +382,13 @@ const ChatPage = () => {
 
     try {
       const res = await fetch(
-        `https://gargalib-backend.onrender.com/api/messages/${activeMessage.id}/restore`,
+        `${API_BASE}/api/messages/${activeMessage.id}/restore`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ userId: currentUserId }),
+          body: JSON.stringify({ userId: Number(currentUserId) }),
         }
       );
 
@@ -378,7 +400,9 @@ const ChatPage = () => {
       }
 
       setMessages((prev) =>
-        prev.map((msg) => (msg.id === activeMessage.id ? data : msg))
+        prev.map((msg) =>
+          msg.id === activeMessage.id ? normalizeMessage(data) : msg
+        )
       );
       setShowMessageMenu(false);
       setActiveMessage(null);

@@ -13,10 +13,14 @@ const Header = ({ children }) => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+
   const navigate = useNavigate();
   const searchRef = useRef(null);
   const menuRef = useRef(null);
   const notificationsRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const notificationsIntervalRef = useRef(null);
   const onlineIntervalRef = useRef(null);
@@ -117,9 +121,7 @@ const Header = ({ children }) => {
         text: normalizeNotificationText(item),
       }))
       .filter((item) => {
-        if (item.type === "message" && item.is_read) {
-          return false;
-        }
+        if (item.type === "message" && item.is_read) return false;
         return true;
       });
   };
@@ -221,11 +223,12 @@ const Header = ({ children }) => {
         setOpen(false);
       }
 
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(e.target)
-      ) {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
         setNotificationsOpen(false);
+      }
+
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
       }
     };
 
@@ -345,6 +348,7 @@ const Header = ({ children }) => {
     if (notification.type === "message") {
       removeNotificationFromList(notification.id);
       setNotificationsOpen(false);
+      setMobileMenuOpen(false);
       navigate(`/chat?user=${notification.from_user_id}`);
       return;
     }
@@ -356,6 +360,7 @@ const Header = ({ children }) => {
         )
       );
       setNotificationsOpen(false);
+      setMobileMenuOpen(false);
       navigate(`/user/${notification.from_user_id}`);
     }
   };
@@ -369,6 +374,7 @@ const Header = ({ children }) => {
     setAvatar(getDefaultAvatar("User"));
     setOpen(false);
     setNotificationsOpen(false);
+    setMobileMenuOpen(false);
     setNotifications([]);
 
     window.dispatchEvent(new Event("userChanged"));
@@ -376,6 +382,66 @@ const Header = ({ children }) => {
   };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+
+  const SearchResults = ({ mobile = false }) => (
+    showResults && results.length > 0 ? (
+      <div
+        className={`glass-border ${
+          mobile
+            ? "mt-3 rounded-[24px] bg-[#0b1120]/90"
+            : "absolute left-0 top-[66px] z-50 w-full rounded-[24px] bg-[#0b1120]/90"
+        } overflow-hidden shadow-2xl shadow-black/50 backdrop-blur-2xl`}
+        style={{ animation: "dropdownIn .22s ease" }}
+      >
+        <div className="search-scroll max-h-72 overflow-y-auto p-2">
+          {results.map((item) => (
+            <div
+              key={`${item.type}-${item.id}`}
+              onClick={async () => {
+                setShowResults(false);
+                setSearch("");
+                setMobileSearchOpen(false);
+                setMobileMenuOpen(false);
+
+                if (item.type === "anime") {
+                  await openAnimePage(item);
+                } else {
+                  navigate(`/user/${item.id}`);
+                }
+              }}
+              className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-3 transition duration-200 hover:translate-x-1 hover:bg-white/10"
+            >
+              {item.type === "anime" ? (
+                <>
+                  <img
+                    src={item.image || "https://placehold.co/100x100?text=Anime"}
+                    alt={item.title}
+                    className="h-11 w-11 rounded-xl border border-white/10 object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-white">{item.title}</p>
+                    <p className="text-xs text-slate-400">Аниме</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={item.avatar || getDefaultAvatar(item.username || "User")}
+                    alt={item.username}
+                    className="h-11 w-11 rounded-full border border-white/15 object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-white">{item.username}</p>
+                    <p className="text-xs text-slate-400">Пользователь</p>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null
+  );
 
   return (
     <>
@@ -464,225 +530,276 @@ const Header = ({ children }) => {
           </div>
         </div>
 
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 text-white sm:px-6">
-          <div className="flex items-center gap-4">
-            <Link
-              to="/home"
-              className="group relative text-2xl font-extrabold tracking-[0.08em]"
-            >
-              <span className="absolute -inset-3 rounded-2xl bg-white/10 opacity-0 blur-xl transition duration-500 group-hover:opacity-100"></span>
-              <span className="relative bg-gradient-to-r from-white via-fuchsia-100 to-sky-200 bg-clip-text text-transparent">
-                GarGaLib
-              </span>
-            </Link>
-
-            <div className="glass-border relative hidden items-center gap-2 overflow-hidden rounded-full bg-white/8 px-3 py-2 text-xs text-slate-200 md:flex">
-              <span className="relative h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.8)] animate-pulse"></span>
-              <span className="relative">Anime World</span>
-            </div>
-          </div>
-
-          <div ref={searchRef} className="relative hidden w-full max-w-xl md:block">
-            <div className="glass-border group relative overflow-hidden rounded-[22px] bg-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition duration-300 focus-within:bg-white/12 hover:bg-white/12">
-              <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400 transition group-focus-within:text-sky-200">
-                🔍
-              </div>
-
-              <input
-                type="text"
-                placeholder="Поиск аниме и пользователей..."
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                onFocus={() => {
-                  if (results.length > 0) setShowResults(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submitSearch();
-                }}
-                className="w-full bg-transparent py-3.5 pl-11 pr-24 text-sm text-white outline-none placeholder:text-slate-400"
-              />
-
-              <button
-                onClick={submitSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-white/12 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition duration-300 hover:scale-105 hover:bg-white/18"
+        <div className="relative mx-auto max-w-7xl px-3 py-3 text-white sm:px-6">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+              <Link
+                to="/home"
+                className="group relative shrink-0 text-lg font-extrabold tracking-[0.08em] sm:text-2xl"
               >
-                Найти
-              </button>
+                <span className="absolute -inset-3 rounded-2xl bg-white/10 opacity-0 blur-xl transition duration-500 group-hover:opacity-100"></span>
+                <span className="relative bg-gradient-to-r from-white via-fuchsia-100 to-sky-200 bg-clip-text text-transparent">
+                  GarGaLib
+                </span>
+              </Link>
+
+              <div className="glass-border relative hidden items-center gap-2 overflow-hidden rounded-full bg-white/8 px-3 py-2 text-xs text-slate-200 lg:flex">
+                <span className="relative h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.8)] animate-pulse"></span>
+                <span className="relative">Anime World</span>
+              </div>
             </div>
 
-            {showResults && results.length > 0 && (
-              <div className="glass-border absolute left-0 top-[66px] z-50 w-full overflow-hidden rounded-[24px] bg-[#0b1120]/90 shadow-2xl shadow-black/50 backdrop-blur-2xl" style={{ animation: "dropdownIn .22s ease" }}>
-                <div className="search-scroll max-h-72 overflow-y-auto p-2">
-                  {results.map((item) => (
-                    <div
-                      key={`${item.type}-${item.id}`}
-                      onClick={async () => {
-                        setShowResults(false);
-                        setSearch("");
-
-                        if (item.type === "anime") {
-                          await openAnimePage(item);
-                        } else {
-                          navigate(`/user/${item.id}`);
-                        }
-                      }}
-                      className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-3 transition duration-200 hover:translate-x-1 hover:bg-white/10"
-                    >
-                      {item.type === "anime" ? (
-                        <>
-                          <img
-                            src={item.image || "https://placehold.co/100x100?text=Anime"}
-                            alt={item.title}
-                            className="h-11 w-11 rounded-xl border border-white/10 object-cover"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-white">{item.title}</p>
-                            <p className="text-xs text-slate-400">Аниме</p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <img
-                            src={
-                              item.avatar ||
-                              getDefaultAvatar(item.username || "User")
-                            }
-                            alt={item.username}
-                            className="h-11 w-11 rounded-full border border-white/15 object-cover"
-                          />
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-white">{item.username}</p>
-                            <p className="text-xs text-slate-400">Пользователь</p>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
+            <div ref={searchRef} className="relative hidden w-full max-w-xl md:block">
+              <div className="glass-border group relative overflow-hidden rounded-[22px] bg-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition duration-300 focus-within:bg-white/12 hover:bg-white/12">
+                <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400 transition group-focus-within:text-sky-200">
+                  🔍
                 </div>
+
+                <input
+                  type="text"
+                  placeholder="Поиск аниме и пользователей..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => {
+                    if (results.length > 0) setShowResults(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitSearch();
+                  }}
+                  className="w-full bg-transparent py-3.5 pl-11 pr-24 text-sm text-white outline-none placeholder:text-slate-400"
+                />
+
+                <button
+                  onClick={submitSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-white/12 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition duration-300 hover:scale-105 hover:bg-white/18"
+                >
+                  Найти
+                </button>
               </div>
-            )}
-          </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              to="/home"
-              className="hidden rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-black/20 transition duration-300 hover:scale-105 hover:bg-white/15 sm:inline-flex"
-            >
-              Смотреть
-            </Link>
+              <SearchResults />
+            </div>
 
-            <div ref={notificationsRef} className="relative">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
-                onClick={() => {
-                  setNotificationsOpen(!notificationsOpen);
-                  if (!notificationsOpen) loadNotifications();
-                }}
-                className="glass-border relative rounded-2xl bg-white/10 p-3 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15"
+                onClick={() => setMobileSearchOpen((prev) => !prev)}
+                className="glass-border rounded-2xl bg-white/10 p-3 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15 md:hidden"
               >
-                <span className="text-lg">🔔</span>
-
-                {unreadCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-[#101521] shadow-[0_0_14px_rgba(255,255,255,0.75)]">
-                    {unreadCount}
-                  </span>
-                )}
+                🔍
               </button>
 
-              {notificationsOpen && (
-                <div className="glass-border absolute right-0 mt-3 w-80 overflow-hidden rounded-[26px] bg-[#0b1120]/90 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl" style={{ animation: "dropdownIn .22s ease" }}>
-                  <div className="mb-2 rounded-2xl bg-white/6 px-3 py-3">
-                    <p className="text-sm font-semibold text-white">Уведомления</p>
-                    <p className="mt-1 text-xs text-slate-400">Подписки, сообщения и активность</p>
-                  </div>
+              <Link
+                to="/home"
+                className="hidden rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-xl shadow-black/20 transition duration-300 hover:scale-105 hover:bg-white/15 lg:inline-flex"
+              >
+                Смотреть
+              </Link>
 
-                  <div className="max-h-80 space-y-2 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="rounded-2xl bg-white/5 px-3 py-4 text-sm text-slate-400">
-                        Уведомлений пока нет
-                      </div>
-                    ) : (
-                      notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          className={`rounded-2xl px-3 py-3 transition ${
-                            n.is_read
-                              ? "bg-white/5"
-                              : "border border-white/10 bg-white/10"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-base">
-                              {n.type === "message" ? "💬" : "🔔"}
-                            </div>
+              <div ref={notificationsRef} className="relative">
+                <button
+                  onClick={() => {
+                    setNotificationsOpen(!notificationsOpen);
+                    if (!notificationsOpen) loadNotifications();
+                  }}
+                  className="glass-border relative rounded-2xl bg-white/10 p-3 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15"
+                >
+                  <span className="text-lg">🔔</span>
 
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm text-white">{n.text}</p>
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-[#101521] shadow-[0_0_14px_rgba(255,255,255,0.75)]">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
 
-                              <div className="mt-2 flex items-center justify-between">
-                                <button
-                                  onClick={() => openNotification(n)}
-                                  className="text-xs text-sky-200 hover:underline"
-                                >
-                                  {n.type === "message" ? "Открыть чат" : "Открыть профиль"}
-                                </button>
+                {notificationsOpen && (
+                  <div className="glass-border absolute right-0 mt-3 w-[92vw] max-w-80 overflow-hidden rounded-[26px] bg-[#0b1120]/90 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl" style={{ animation: "dropdownIn .22s ease" }}>
+                    <div className="mb-2 rounded-2xl bg-white/6 px-3 py-3">
+                      <p className="text-sm font-semibold text-white">Уведомления</p>
+                      <p className="mt-1 text-xs text-slate-400">Подписки, сообщения и активность</p>
+                    </div>
 
-                                {!n.is_read && (
+                    <div className="max-h-80 space-y-2 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="rounded-2xl bg-white/5 px-3 py-4 text-sm text-slate-400">
+                          Уведомлений пока нет
+                        </div>
+                      ) : (
+                        notifications.map((n) => (
+                          <div
+                            key={n.id}
+                            className={`rounded-2xl px-3 py-3 transition ${
+                              n.is_read
+                                ? "bg-white/5"
+                                : "border border-white/10 bg-white/10"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-base">
+                                {n.type === "message" ? "💬" : "🔔"}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm text-white">{n.text}</p>
+
+                                <div className="mt-2 flex items-center justify-between gap-3">
                                   <button
-                                    onClick={() => markAsRead(n.id)}
-                                    className="text-xs text-white/80 hover:underline"
+                                    onClick={() => openNotification(n)}
+                                    className="text-xs text-sky-200 hover:underline"
                                   >
-                                    Прочитано
+                                    {n.type === "message" ? "Открыть чат" : "Открыть профиль"}
                                   </button>
-                                )}
+
+                                  {!n.is_read && (
+                                    <button
+                                      onClick={() => markAsRead(n.id)}
+                                      className="text-xs text-white/80 hover:underline"
+                                    >
+                                      Прочитано
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setOpen(!open)}
-                className="glass-border group relative rounded-2xl bg-white/10 p-1.5 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15"
-              >
-                <span className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition duration-500 group-hover:opacity-100"></span>
-                <img
-                  src={avatar}
-                  alt="avatar"
-                  className="relative h-11 w-11 rounded-xl border border-white/15 object-cover"
-                />
-              </button>
+              <div ref={menuRef} className="relative hidden sm:block">
+                <button
+                  onClick={() => setOpen(!open)}
+                  className="glass-border group relative rounded-2xl bg-white/10 p-1.5 backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15"
+                >
+                  <span className="absolute inset-0 rounded-2xl bg-white/10 opacity-0 blur-xl transition duration-500 group-hover:opacity-100"></span>
+                  <img
+                    src={avatar}
+                    alt="avatar"
+                    className="relative h-11 w-11 rounded-xl border border-white/15 object-cover"
+                  />
+                </button>
 
-              {open && (
-                <div className="glass-border absolute right-0 mt-3 w-52 overflow-hidden rounded-[24px] bg-[#0b1120]/90 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl" style={{ animation: "dropdownIn .22s ease" }}>
-                  <div className="mb-2 rounded-2xl bg-white/6 px-3 py-3">
-                    <p className="text-sm font-semibold text-white">Мой аккаунт</p>
-                    <p className="mt-1 text-xs text-slate-400">Переход к профилю</p>
+                {open && (
+                  <div className="glass-border absolute right-0 mt-3 w-52 overflow-hidden rounded-[24px] bg-[#0b1120]/90 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl" style={{ animation: "dropdownIn .22s ease" }}>
+                    <div className="mb-2 rounded-2xl bg-white/6 px-3 py-3">
+                      <p className="text-sm font-semibold text-white">Мой аккаунт</p>
+                      <p className="mt-1 text-xs text-slate-400">Переход к профилю</p>
+                    </div>
+
+                    <Link
+                      to="/profile"
+                      className="mb-1 block rounded-2xl px-3 py-3 text-sm text-white transition hover:bg-white/10"
+                      onClick={() => setOpen(false)}
+                    >
+                      Профиль
+                    </Link>
+
+                    <button
+                      onClick={logout}
+                      className="block w-full rounded-2xl px-3 py-3 text-left text-sm text-white/80 transition hover:bg-white/10"
+                    >
+                      Выйти
+                    </button>
                   </div>
+                )}
+              </div>
 
-                  <Link
-                    to="/profile"
-                    className="mb-1 block rounded-2xl px-3 py-3 text-sm text-white transition hover:bg-white/10"
-                    onClick={() => setOpen(false)}
-                  >
-                    Профиль
-                  </Link>
+              <div ref={mobileMenuRef} className="relative sm:hidden">
+                <button
+                  onClick={() => setMobileMenuOpen((prev) => !prev)}
+                  className="glass-border rounded-2xl bg-white/10 px-3 py-3 text-sm backdrop-blur-xl transition duration-300 hover:scale-105 hover:bg-white/15"
+                >
+                  ☰
+                </button>
 
-                  <button
-                    onClick={logout}
-                    className="block w-full rounded-2xl px-3 py-3 text-left text-sm text-white/80 transition hover:bg-white/10"
+                {mobileMenuOpen && (
+                  <div
+                    className="glass-border absolute right-0 mt-3 w-56 overflow-hidden rounded-[24px] bg-[#0b1120]/90 p-2 shadow-2xl shadow-black/50 backdrop-blur-2xl"
+                    style={{ animation: "dropdownIn .22s ease" }}
                   >
-                    Выйти
-                  </button>
-                </div>
-              )}
+                    <div className="mb-2 flex items-center gap-3 rounded-2xl bg-white/6 px-3 py-3">
+                      <img
+                        src={avatar}
+                        alt="avatar"
+                        className="h-10 w-10 rounded-xl border border-white/15 object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">Мой аккаунт</p>
+                        <p className="text-xs text-slate-400">Меню</p>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/home"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mb-1 block rounded-2xl px-3 py-3 text-sm text-white transition hover:bg-white/10"
+                    >
+                      Главная
+                    </Link>
+
+                    <Link
+                      to="/animes"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mb-1 block rounded-2xl px-3 py-3 text-sm text-white transition hover:bg-white/10"
+                    >
+                      Аниме
+                    </Link>
+
+                    <Link
+                      to="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mb-1 block rounded-2xl px-3 py-3 text-sm text-white transition hover:bg-white/10"
+                    >
+                      Профиль
+                    </Link>
+
+                    <button
+                      onClick={logout}
+                      className="block w-full rounded-2xl px-3 py-3 text-left text-sm text-white/80 transition hover:bg-white/10"
+                    >
+                      Выйти
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+
+          {mobileSearchOpen && (
+            <div ref={searchRef} className="mt-3 md:hidden">
+              <div className="glass-border group relative overflow-hidden rounded-[22px] bg-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.25)] backdrop-blur-xl transition duration-300 focus-within:bg-white/12 hover:bg-white/12">
+                <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400 transition group-focus-within:text-sky-200">
+                  🔍
+                </div>
+
+                <input
+                  type="text"
+                  placeholder="Поиск аниме и пользователей..."
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  onFocus={() => {
+                    if (results.length > 0) setShowResults(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitSearch();
+                  }}
+                  className="w-full bg-transparent py-3.5 pl-11 pr-24 text-sm text-white outline-none placeholder:text-slate-400"
+                />
+
+                <button
+                  onClick={submitSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-2xl border border-white/15 bg-white/12 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/20 transition duration-300 hover:scale-105 hover:bg-white/18"
+                >
+                  Найти
+                </button>
+              </div>
+
+              <SearchResults mobile />
+            </div>
+          )}
         </div>
       </header>
 

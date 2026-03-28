@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const API_BASE = "https://gargalib-backend.onrender.com";
@@ -24,9 +24,8 @@ const Profile = () => {
   const [searchEmail, setSearchEmail] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [newName, setNewName] = useState("");
-  const [animeList, setAnimeList] = useState([]);
   const [watchedIds, setWatchedIds] = useState([]);
-  const [favoriteIds, setFavoriteIds] = useState([]);
+  const [favoriteAnime, setFavoriteAnime] = useState([]);
   const [stats, setStats] = useState({ watched: 0, favorites: 0, uploaded: 0 });
   const [selectedAvatarFile, setSelectedAvatarFile] = useState(null);
   const [avatarDirty, setAvatarDirty] = useState(false);
@@ -43,18 +42,14 @@ const Profile = () => {
   const getJsonStorage = (key, fallback) => {
     try {
       const value = localStorage.getItem(key);
-      if (!value || value === "undefined" || value === "null") {
-        return fallback;
-      }
+      if (!value || value === "undefined" || value === "null") return fallback;
       return JSON.parse(value);
     } catch {
       return fallback;
     }
   };
 
-  const getCurrentUser = () => {
-    return getJsonStorage("currentUser", null);
-  };
+  const getCurrentUser = () => getJsonStorage("currentUser", null);
 
   const getDefaultAvatar = (name = "User") =>
     `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`;
@@ -112,6 +107,38 @@ const Profile = () => {
 
     return [];
   };
+
+  const loadFavorites = async (userId) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/users/${userId}/favorites?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      setFavoriteAnime(list);
+      return list;
+    } catch (err) {
+      console.log("LOAD FAVORITES ERROR:", err);
+      setFavoriteAnime([]);
+      return [];
+    }
+  };
+
+  const loadWatchedAnime = async (ids) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/anime?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      const animeList = Array.isArray(data) ? data : [];
+      return animeList.filter((anime) => ids.map(String).includes(String(anime.id)));
+    } catch (err) {
+      console.log("LOAD WATCHED ANIME ERROR:", err);
+      return [];
+    }
+  };
+
+  const [watchedAnime, setWatchedAnime] = useState([]);
 
   const openConnectionsModal = async (type) => {
     try {
@@ -194,8 +221,12 @@ const Profile = () => {
       }
 
       const watched = getJsonStorage(`watched_${currentUser.id}`, []);
-      const favorites = getJsonStorage(`favorites_${currentUser.id}`, []);
       const uploaded = getJsonStorage(`uploaded_${currentUser.id}`, []);
+
+      const [favoriteList, watchedList] = await Promise.all([
+        loadFavorites(currentUser.id),
+        loadWatchedAnime(watched),
+      ]);
 
       const preparedUser = {
         ...data,
@@ -208,10 +239,10 @@ const Profile = () => {
       setUser(preparedUser);
       setNewName(preparedUser.username || "");
       setWatchedIds(watched);
-      setFavoriteIds(favorites);
+      setWatchedAnime(watchedList);
       setStats({
         watched: watched.length,
-        favorites: favorites.length,
+        favorites: favoriteList.length,
         uploaded: uploaded.length,
       });
 
@@ -247,17 +278,6 @@ const Profile = () => {
     }
   };
 
-  const loadAnime = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/anime`);
-      const data = await res.json();
-      setAnimeList(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.log(err);
-      setAnimeList([]);
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       const currentUser = getCurrentUser();
@@ -266,7 +286,7 @@ const Profile = () => {
         return;
       }
 
-      await Promise.all([loadCurrentProfile(), loadAnime()]);
+      await loadCurrentProfile();
 
       const freshCurrent = getCurrentUser();
       if (freshCurrent?.role === "owner") {
@@ -310,18 +330,6 @@ const Profile = () => {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [connectionsModal.open]);
-
-  const watchedAnime = useMemo(
-    () =>
-      animeList.filter((anime) => watchedIds.map(String).includes(String(anime.id))),
-    [animeList, watchedIds]
-  );
-
-  const favoriteAnime = useMemo(
-    () =>
-      animeList.filter((anime) => favoriteIds.map(String).includes(String(anime.id))),
-    [animeList, favoriteIds]
-  );
 
   const handleSearchUser = () => {
     setFilteredUsers(
@@ -566,36 +574,12 @@ const Profile = () => {
   const displayUsers = searchEmail.trim() ? filteredUsers : users;
 
   const statsCards = [
-    {
-      value: user.followers || 0,
-      label: "Подписчики",
-      icon: "👥",
-      clickType: "followers",
-    },
-    {
-      value: user.following || 0,
-      label: "Подписки",
-      icon: "➕",
-      clickType: "following",
-    },
-    {
-      value: stats.watched,
-      label: "Просмотрено",
-      icon: "🎬",
-    },
-    {
-      value: stats.favorites,
-      label: "Избранное",
-      icon: "⭐",
-    },
+    { value: user.followers || 0, label: "Подписчики", icon: "👥", clickType: "followers" },
+    { value: user.following || 0, label: "Подписки", icon: "➕", clickType: "following" },
+    { value: stats.watched, label: "Просмотрено", icon: "🎬" },
+    { value: stats.favorites, label: "Избранное", icon: "⭐" },
     ...(user.role === "admin" || user.role === "owner"
-      ? [
-          {
-            value: stats.uploaded,
-            label: "Загружено",
-            icon: "📤",
-          },
-        ]
+      ? [{ value: stats.uploaded, label: "Загружено", icon: "📤" }]
       : []),
   ];
 
@@ -633,15 +617,29 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070b18] text-white flex items-center justify-center">
-        Загрузка профиля...
+      <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
+        <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl" />
+        <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl" />
+        <div className="relative flex min-h-screen items-center justify-center">
+          <div className="rounded-3xl border border-white/10 bg-white/10 px-8 py-5 text-lg backdrop-blur-2xl shadow-2xl">
+            Загрузка профиля...
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#060816] text-white">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <div className="relative min-h-screen overflow-hidden bg-[#060816] text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(124,58,237,0.24),transparent_32%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,#050816_0%,#0c1330_45%,#190f36_100%)]" />
+      <div className="absolute -left-24 top-0 h-[22rem] w-[22rem] rounded-full bg-pink-500/20 blur-3xl" />
+      <div className="absolute right-[-6rem] top-[8%] h-[24rem] w-[24rem] rounded-full bg-cyan-400/20 blur-3xl" />
+      <div className="absolute bottom-[-5rem] left-[24%] h-[20rem] w-[20rem] rounded-full bg-violet-500/20 blur-3xl" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:70px_70px] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.55),transparent)]" />
+
+      <div className="relative z-10 mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur-2xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
             <div className="relative mx-auto lg:mx-0">

@@ -269,7 +269,7 @@ const AnimeCard = ({ anime, index, onOpen }) => (
 
       <div className="relative h-52 overflow-hidden sm:h-64 xl:h-72">
         <img
-          src={anime.image || "https://www.crunchyroll.com/ru/?srsltid=AfmBOopoFtbhP8PvM0ZyKY5E91TB8rI9PFL-M7En3WCsenMYV8djLRw2"}
+          src={anime.image || "https://placehold.co/600x900?text=Anime"}
           alt={anime.title}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
         />
@@ -766,11 +766,11 @@ const AnimesPage = () => {
             <div className="rounded-[36px] border border-white/10 bg-black/15 p-4 shadow-2xl shadow-black/30 backdrop-blur-md">
               <div className="relative overflow-hidden rounded-[30px] border border-white/10 bg-slate-950/40">
                 <img
-                  src="https://rozetked.me/images/uploads/5mVu2BC9XLcV.jpg"
-                  alt="anime background"
-                  className="h-[280px] w-full object-cover sm:h-[420px]"
-                  style={{ animation: "heroGlow 8s ease-in-out infinite" }}
-                />
+                    src="https://static.crunchyroll.com/cr-acquisition/assets/img/start/hero/us-global/background-desktop.jpg"
+                    alt="anime background"
+                    className="h-[220px] w-full object-cover object-center sm:h-[320px] lg:h-[420px]"
+                    style={{ animation: "heroGlow 8s ease-in-out infinite" }}
+                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#02040b]/90 via-[#02040b]/40 to-[#02040b]/10"></div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">

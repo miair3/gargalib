@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://gargalib-frontend.onrender.com/</loc>
+  </url>
+  <url>
+    <loc>https://gargalib-frontend.onrender.com/home</loc>
+  </url>
+  <url>
+    <loc>https://gargalib-frontend.onrender.com/animes</loc>
+  </url>
+  <url>
+    <loc>https://gargalib-frontend.onrender.com/login</loc>
+  </url>
+  <url>
+    <loc>https://gargalib-frontend.onrender.com/register</loc>
+  </url>
+</urlset>

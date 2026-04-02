@@ -1,15 +1,15 @@
 import express from 'express';
 
 const router = express.Router();
-const ENIME_API = 'https://api.enime.moe';
+const ANIWATCH_API = 'https://aniwatch-api-phi.vercel.app/api/v2';
 
 // Поиск аниме
 router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
-    const response = await fetch(`${ENIME_API}/search?query=${encodeURIComponent(q)}`);
+    const response = await fetch(`${ANIWATCH_API}/hianime/search?q=${encodeURIComponent(q)}`);
     const data = await response.json();
-    res.json({ results: data });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -19,7 +19,7 @@ router.get('/search', async (req, res) => {
 router.get('/info/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await fetch(`${ENIME_API}/anime/${id}`);
+    const response = await fetch(`${ANIWATCH_API}/hianime/info?id=${id}`);
     const data = await response.json();
     res.json(data);
   } catch (err) {
@@ -27,20 +27,13 @@ router.get('/info/:id', async (req, res) => {
   }
 });
 
-// Ссылка на видео
+// Ссылка на видео для серии
 router.get('/watch/:episodeId', async (req, res) => {
   try {
     const { episodeId } = req.params;
-    const response = await fetch(`${ENIME_API}/episode/${episodeId}`);
+    const response = await fetch(`${ANIWATCH_API}/hianime/episode/sources?episodeId=${episodeId}`);
     const data = await response.json();
-    
-    // Enime возвращает ссылки на видео в другом формате
-    const sources = data.sources?.map(s => ({
-      url: s.url,
-      quality: s.quality || 'unknown'
-    })) || [];
-    
-    res.json({ sources });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

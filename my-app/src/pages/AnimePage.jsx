@@ -1332,7 +1332,7 @@ const prevEpisode = () => {
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.96 }}
-                                onClick={() => playEpisode(ep.video || ep.video_url, index)}
+                                onClick={() => playEpisode(ep, index)}
                                 className="rounded-2xl border border-white/10 bg-white/10 p-3 text-fuchsia-200"
                               >
                                 <Play className="h-4 w-4" />

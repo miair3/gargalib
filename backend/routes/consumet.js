@@ -1,39 +1,34 @@
 import express from 'express';
+import { ANIME } from '@consumet/extensions';
 
 const router = express.Router();
-const ANIWATCH_API = 'https://aniwatch-api-phi.vercel.app/api/v2';
+const hianime = new ANIME.Hianime();
 
-// Поиск аниме
 router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
-    const response = await fetch(`${ANIWATCH_API}/hianime/search?q=${encodeURIComponent(q)}`);
-    const data = await response.json();
-    res.json(data);
+    const results = await hianime.search(q);
+    res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Информация об аниме и список серий
 router.get('/info/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const response = await fetch(`${ANIWATCH_API}/hianime/info?id=${id}`);
-    const data = await response.json();
-    res.json(data);
+    const info = await hianime.fetchAnimeInfo(id);
+    res.json(info);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Ссылка на видео для серии
 router.get('/watch/:episodeId', async (req, res) => {
   try {
     const { episodeId } = req.params;
-    const response = await fetch(`${ANIWATCH_API}/hianime/episode/sources?episodeId=${episodeId}`);
-    const data = await response.json();
-    res.json(data);
+    const sources = await hianime.fetchEpisodeSources(episodeId);
+    res.json(sources);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

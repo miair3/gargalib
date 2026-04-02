@@ -2,12 +2,12 @@ import express from 'express';
 import { ANIME } from '@consumet/extensions';
 
 const router = express.Router();
-const animepahe = new ANIME.AnimePahe();
+const kickass = new ANIME.KickAssAnime();
 
 router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
-    const results = await animepahe.search(q);
+    const results = await kickass.search(q);
     res.json(results);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -17,7 +17,7 @@ router.get('/search', async (req, res) => {
 router.get('/info/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const info = await animepahe.fetchAnimeInfo(id);
+    const info = await kickass.fetchAnimeInfo(id);
     res.json(info);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -27,7 +27,7 @@ router.get('/info/:id', async (req, res) => {
 router.get('/watch/:episodeId', async (req, res) => {
   try {
     const { episodeId } = req.params;
-    const sources = await animepahe.fetchEpisodeSources(episodeId);
+    const sources = await kickass.fetchEpisodeSources(episodeId);
     res.json(sources);
   } catch (err) {
     res.status(500).json({ error: err.message });

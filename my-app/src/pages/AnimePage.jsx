@@ -147,25 +147,23 @@ const AnimePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-const [anime, setAnime] = useState(null);
-const [episodes, setEpisodes] = useState([]);
-const [currentVideo, setCurrentVideo] = useState(null);
-const [currentIndex, setCurrentIndex] = useState(null);
-const [consumetId, setConsumetId] = useState(null);
-const [loadingEpisodes, setLoadingEpisodes] = useState(false);
+  const [anime, setAnime] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [currentVideo, setCurrentVideo] = useState(null);
+  const [currentIndex, setCurrentIndex] = useState(null);
 
-const [counts, setCounts] = useState({ likes: 0, dislikes: 0 });
-const [liked, setLiked] = useState(false);
-const [disliked, setDisliked] = useState(false);
-const [favorite, setFavorite] = useState(false);
+  const [counts, setCounts] = useState({ likes: 0, dislikes: 0 });
+  const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
+  const [favorite, setFavorite] = useState(false);
 
-const [comments, setComments] = useState([]);
-const [commentText, setCommentText] = useState("");
-const [commentsLoading, setCommentsLoading] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [commentsLoading, setCommentsLoading] = useState(false);
 
-const [addingAnime, setAddingAnime] = useState(false);
-const [showFullDescription, setShowFullDescription] = useState(false);
-const [reactionLoading, setReactionLoading] = useState(false);
+  const [addingAnime, setAddingAnime] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [reactionLoading, setReactionLoading] = useState(false);
 
   let user = null;
   try {
@@ -215,24 +213,42 @@ const [reactionLoading, setReactionLoading] = useState(false);
     return isJikan ? `favorites_jikan_${currentUserId}` : `favorites_${currentUserId}`;
   };
 
-const loadAnime = async () => {
-  try {
-    if (isJikan) {
-      const localCheckRes = await fetch(
-        `${API_BASE}/api/anime/by-jikan/${id}`,
-        { cache: "no-store" }
-      );
+  const loadAnime = async () => {
+    try {
+      if (isJikan) {
+        const localCheckRes = await fetch(
+          `${API_BASE}/api/anime/by-jikan/${id}`,
+          { cache: "no-store" }
+        );
 
-      if (localCheckRes.ok) {
-        const localAnime = await localCheckRes.json();
+        if (localCheckRes.ok) {
+          const localAnime = await localCheckRes.json();
 
-        if (localAnime?.id) {
-          navigate(`/anime/${localAnime.id}`, { replace: true });
+          if (localAnime?.id) {
+            navigate(`/anime/${localAnime.id}`, { replace: true });
+            return;
+          }
+        }
+
+        const res = await fetch(`${API_BASE}/api/anime/jikan/${id}`, {
+          cache: "no-store",
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          setAnime(null);
           return;
         }
+
+        setAnime({
+          ...data,
+          banner: data.banner || data.image,
+          description: data.description || "Описание пока отсутствует.",
+        });
+        return;
       }
 
-      const res = await fetch(`${API_BASE}/api/anime/jikan/${id}`, {
+      const res = await fetch(`${API_BASE}/api/anime/local/${id}`, {
         cache: "no-store",
       });
       const data = await res.json();
@@ -242,88 +258,27 @@ const loadAnime = async () => {
         return;
       }
 
-      setAnime({
-        ...data,
-        banner: data.banner || data.image,
-        description: data.description || "Описание пока отсутствует.",
-      });
-      return;
-    }
-
-    const res = await fetch(`${API_BASE}/api/anime/local/${id}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
+      setAnime(data || null);
+    } catch (err) {
+      console.log("LOAD ANIME ERROR:", err);
       setAnime(null);
-      return;
     }
+  };
 
-    setAnime(data || null);
-    
-    // ПОСЛЕ ТОГО КАК УСТАНОВИЛИ ANIME - ИЩЕМ CONSUMET ID
-    if (data?.title) {
-      await findConsumetId(data.title);
+  const loadEpisodes = async () => {
+    if (isJikan) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/episodes/${id}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setEpisodes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.log("LOAD EPISODES ERROR:", err);
+      setEpisodes([]);
     }
-  } catch (err) {
-    console.log("LOAD ANIME ERROR:", err);
-    setAnime(null);
-  }
-};
-
-const loadLocalEpisodes = async () => {
-  if (isJikan) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/episodes/${id}`, {
-      cache: "no-store",
-    });
-    const data = await res.json();
-    // Загружаем локальные серии ТОЛЬКО если нет серий из Consumet
-    if (Array.isArray(data) && data.length > 0 && episodes.length === 0) {
-      setEpisodes(data);
-    }
-  } catch (err) {
-    console.log("LOAD LOCAL EPISODES ERROR:", err);
-  }
-};
-
-// Поиск Consumet ID по названию аниме
-const findConsumetId = async (title) => {
-  try {
-    const res = await fetch(`${API_BASE}/api/consumet/search?q=${encodeURIComponent(title)}`);
-    const data = await res.json();
-    if (data.results && data.results.length > 0) {
-      setConsumetId(data.results[0].id);
-      await loadEpisodesFromConsumet(data.results[0].id);
-    }
-  } catch (err) {
-    console.log("FIND CONSUMET ID ERROR:", err);
-  }
-};
-
-// Загрузка серий из Consumet API
-const loadEpisodesFromConsumet = async (cId) => {
-  setLoadingEpisodes(true);
-  try {
-    const res = await fetch(`${API_BASE}/api/consumet/info/${cId}`);
-    const data = await res.json();
-    if (data.episodes && data.episodes.length > 0) {
-      const formattedEpisodes = data.episodes.map((ep, idx) => ({
-        id: ep.id,
-        episode_number: ep.number || idx + 1,
-        title: ep.title || `Серия ${ep.number || idx + 1}`,
-        episodeId: ep.id,
-      }));
-      setEpisodes(formattedEpisodes);
-    }
-  } catch (err) {
-    console.log("LOAD EPISODES FROM CONSUMET ERROR:", err);
-  } finally {
-    setLoadingEpisodes(false);
-  }
-};
+  };
 
   const loadFavoriteState = () => {
     const currentUserId = getCurrentUserId();
@@ -410,7 +365,7 @@ const loadEpisodesFromConsumet = async (cId) => {
     loadAnime();
 
     if (!isJikan) {
-      loadLocalEpisodes();
+      loadEpisodes();
     } else {
       setEpisodes([]);
       setCurrentVideo(null);
@@ -717,49 +672,34 @@ const loadEpisodesFromConsumet = async (cId) => {
   }
 };
 
-const playEpisode = async (episode, index) => {
-  if (!episode || banInfo.banned) return;
-  
-  setLoadingEpisodes(true);
-  try {
-    const episodeId = episode.episodeId || episode.id;
-    const res = await fetch(`${API_BASE}/api/consumet/watch/${episodeId}`);
-    const data = await res.json();
-    
-    let videoUrl = null;
-    if (data.sources && data.sources.length > 0) {
-      const bestSource = data.sources.find(s => s.quality === '720p') || 
-                        data.sources.find(s => s.quality === '1080p') ||
-                        data.sources[0];
-      videoUrl = bestSource.url;
-    }
-    
-    if (videoUrl) {
-      setCurrentVideo(videoUrl);
-      setCurrentIndex(index);
-      markAsWatched();
-    } else {
-      alert("Не удалось получить ссылку на видео");
-    }
-  } catch (err) {
-    console.log("PLAY EPISODE ERROR:", err);
-    alert("Ошибка загрузки видео");
-  } finally {
-    setLoadingEpisodes(false);
-  }
+  const playEpisode = (video, index) => {
+  if (!video || banInfo.banned) return;
+
+  markAsWatched();
+
+  setCurrentVideo(video);
+  setCurrentIndex(index);
 };
 
 const nextEpisode = () => {
   if (currentIndex !== null && currentIndex < episodes.length - 1) {
     const next = currentIndex + 1;
-    playEpisode(episodes[next], next);
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[next].video || episodes[next].video_url);
+    setCurrentIndex(next);
   }
 };
 
 const prevEpisode = () => {
   if (currentIndex !== null && currentIndex > 0) {
     const prev = currentIndex - 1;
-    playEpisode(episodes[prev], prev);
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
+    setCurrentIndex(prev);
   }
 };
 
@@ -974,7 +914,7 @@ const prevEpisode = () => {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => playEpisode(episodes[0], 0)}
+                    onClick={() => playEpisode(episodes[0].video || episodes[0].video_url, 0)}
                     className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-4 font-semibold text-white shadow-2xl shadow-fuchsia-900/35"
                   >
                     <span className="flex items-center gap-2">
@@ -1311,7 +1251,7 @@ const prevEpisode = () => {
                           <div className="pointer-events-none absolute -right-10 top-3 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-3xl transition duration-700 group-hover:scale-125" />
                           <div className="flex items-start justify-between gap-4">
                             <div
-                              onClick={() => playEpisode(ep, index)}
+                              onClick={() => playEpisode(ep.video || ep.video_url, index)}
                               className="flex-1 cursor-pointer"
                             >
                               <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
@@ -1332,7 +1272,7 @@ const prevEpisode = () => {
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.96 }}
-                                onClick={() => playEpisode(ep, index)}
+                                onClick={() => playEpisode(ep.video || ep.video_url, index)}
                                 className="rounded-2xl border border-white/10 bg-white/10 p-3 text-fuchsia-200"
                               >
                                 <Play className="h-4 w-4" />

@@ -7,6 +7,7 @@ const AddEpisode = () => {
 
   const [episodeNumber, setEpisodeNumber] = useState("");
   const [videoFile, setVideoFile] = useState(null);
+  const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("currentUser"));
@@ -20,7 +21,7 @@ const AddEpisode = () => {
         id: episodeData?.id || Date.now(),
         animeId: Number(id),
         episodeNumber: Number(episodeNumber),
-        videoName: videoFile?.name || "",
+        videoName: videoFile?.name || videoUrl || "",
         createdAt: new Date().toISOString(),
       };
 
@@ -33,8 +34,13 @@ const AddEpisode = () => {
   };
 
   const handleSubmit = async () => {
-    if (!episodeNumber || !videoFile) {
-      alert("Заполни все поля и выбери видео");
+    if (!episodeNumber) {
+      alert("Введи номер серии");
+      return;
+    }
+
+    if (!videoFile && !videoUrl.trim()) {
+      alert("Выбери видеофайл или вставь ссылку");
       return;
     }
 
@@ -49,7 +55,12 @@ const AddEpisode = () => {
     formData.append("animeId", id);
     formData.append("episodeNumber", episodeNumber);
     formData.append("userId", currentUserId);
-    formData.append("video", videoFile);
+
+    if (videoFile) {
+      formData.append("video", videoFile);
+    } else {
+      formData.append("videoUrl", videoUrl.trim());
+    }
 
     try {
       setLoading(true);
@@ -99,14 +110,13 @@ const AddEpisode = () => {
                   Добавьте новую серию красиво
                 </h1>
                 <p className="mt-5 max-w-md text-base leading-8 text-slate-200">
-                  Загрузите видеофайл, укажите номер серии и сразу отправьте его
-                  в карточку аниме.
+                  Можно загрузить видеофайл или вставить ссылку на видео.
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="rounded-3xl border border-white/10 bg-white/10 p-5">
-                  <p className="text-sm text-slate-300">Что можно загрузить</p>
+                  <p className="text-sm text-slate-300">Что можно добавить</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-pink-200">
                       MP4
@@ -117,14 +127,17 @@ const AddEpisode = () => {
                     <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-violet-200">
                       OGG
                     </span>
+                    <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-emerald-200">
+                      Ссылка
+                    </span>
                   </div>
                 </div>
 
                 <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
                   <p className="text-sm text-slate-300">Совет</p>
                   <p className="mt-2 text-sm leading-7 text-white/90">
-                    Лучше загружать файл с понятным названием, чтобы потом было
-                    легче ориентироваться в сериях.
+                    Заполни номер серии, потом выбери один вариант:
+                    либо файл, либо ссылку.
                   </p>
                 </div>
               </div>
@@ -141,7 +154,7 @@ const AddEpisode = () => {
                   Добавить серию
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
-                  Заполните данные ниже и загрузите видеофайл серии.
+                  Заполни данные ниже и загрузи файл или вставь ссылку.
                 </p>
               </div>
 
@@ -161,7 +174,7 @@ const AddEpisode = () => {
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-pink-200">
-                    Видео серии
+                    Видео серии — файл
                   </label>
 
                   <label className="group flex min-h-[120px] w-full cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed border-white/15 bg-black/25 px-5 py-6 text-center transition hover:border-pink-400/30 hover:bg-black/35">
@@ -184,6 +197,21 @@ const AddEpisode = () => {
                       className="hidden"
                     />
                   </label>
+                </div>
+
+                <div className="text-center text-sm text-slate-400">или</div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-pink-200">
+                    Ссылка на видео
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/video.mp4"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 text-white outline-none transition placeholder:text-slate-400 focus:border-pink-400/40 focus:bg-black/40"
+                  />
                 </div>
 
                 <div className="rounded-2xl border border-cyan-400/10 bg-cyan-400/10 px-4 py-3 text-sm text-cyan-100">

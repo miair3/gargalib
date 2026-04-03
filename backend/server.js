@@ -11,7 +11,6 @@ import episodeRoutes from "./routes/episodes.js";
 import userRoutes from "./routes/users.js";
 import messageRoutes from "./routes/messages.js";
 import notificationRoutes from "./routes/notifications.js";
-import consumetRoutes from './routes/consumet.js';
 
 const app = express();
 
@@ -43,7 +42,6 @@ app.use("/api/episodes", episodeRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
-app.use('/api/consumet', consumetRoutes);
 
 app.get("/", (req, res) => {
   res.send("Gargalib backend is running");

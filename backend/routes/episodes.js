@@ -27,10 +27,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 //
-// ➕ ДОБАВИТЬ СЕРИЮ С ВИДЕОФАЙЛОМ
+// ➕ ДОБАВИТЬ СЕРИЮ С ФАЙЛОМ ИЛИ ССЫЛКОЙ
 //
 router.post("/", upload.single("video"), async (req, res) => {
-  const { animeId, episodeNumber, userId } = req.body;
+  const { animeId, episodeNumber, userId, videoUrl } = req.body;
 
   console.log("BODY:", req.body);
   console.log("FILE:", req.file);
@@ -52,8 +52,15 @@ router.post("/", upload.single("video"), async (req, res) => {
       return res.status(403).json({ message: "Нет доступа" });
     }
 
-    if (!animeId || !episodeNumber || !req.file) {
+    if (!animeId || !episodeNumber) {
       return res.status(400).json({ message: "Пустые данные" });
+    }
+
+    // Нужно либо видео-файл, либо ссылка
+    if (!req.file && !videoUrl?.trim()) {
+      return res.status(400).json({
+        message: "Нужно загрузить видеофайл или вставить ссылку",
+      });
     }
 
     const anime = await pool.query(
@@ -74,7 +81,13 @@ router.post("/", upload.single("video"), async (req, res) => {
       return res.status(400).json({ message: "Такая серия уже существует" });
     }
 
-    const videoUrl = `https://gargalib-backend.onrender.com/uploads/${req.file.filename}`;
+    let finalVideoUrl = "";
+
+    if (req.file) {
+      finalVideoUrl = `https://gargalib-backend.onrender.com/uploads/${req.file.filename}`;
+    } else {
+      finalVideoUrl = videoUrl.trim();
+    }
 
     const result = await pool.query(
       `
@@ -85,7 +98,7 @@ router.post("/", upload.single("video"), async (req, res) => {
       [
         parseInt(animeId, 10),
         parseInt(episodeNumber, 10),
-        videoUrl,
+        finalVideoUrl,
       ]
     );
 
@@ -153,7 +166,8 @@ router.delete("/:episodeId", async (req, res) => {
 
     await pool.query("DELETE FROM episodes WHERE id=$1", [episodeId]);
 
-    if (episodeData.video) {
+    // удаляем файл только если это локальный uploads файл
+    if (episodeData.video && episodeData.video.includes("/uploads/")) {
       try {
         const fileName = episodeData.video.split("/uploads/")[1];
 

@@ -1,65 +1,69 @@
 import express from 'express';
+import animepahe from 'animepahe-api';
 
 const router = express.Router();
 
-// AniList для информации об аниме (стабилен годами)
-const ANILIST_API = 'https://graphql.anilist.co';
+// Глобальная переменная для хранения сессии API
+let apiSession = null;
 
-// Anify API для видео (активная замена умершего aniwatch-api)
-const ANIFY_API = 'https://api.anify.tv';
+// Вспомогательная функция для получения/обновления сессии
+async function getSession() {
+    if (!apiSession) {
+        // Инициализируем API. Метод может называться иначе, сверьтесь с документацией.
+        // Если потребуется, позже заменим на правильный вызов.
+        apiSession = await animepahe.init(); 
+    }
+    return apiSession;
+}
 
-// Поиск аниме через AniList
+// Эндпоинт для ПОИСКА (пример: /api/consumet/search?q=naruto)
 router.get('/search', async (req, res) => {
-  try {
-    const { q } = req.query;
-    const query = `query ($search: String) {
-      Page(perPage: 10) {
-        media(search: $search, type: ANIME) {
-          id
-          title { romaji english }
-          coverImage { large }
-          bannerImage
-          episodes
-          status
-          year: startDate { year }
-        }
-      }
-    }`;
-    
-    const response = await fetch(ANILIST_API, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: { search: q } })
-    });
-    const data = await response.json();
-    res.json({ results: data.data.Page.media });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        const { q } = req.query;
+        const session = await getSession();
+        // Метод search может возвращать список аниме. Уточните по документации.
+        const results = await animepahe.search(session, q);
+        res.json({ results: results });
+    } catch (err) {
+        console.error("Search error:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Информация об аниме и список серий через Anify
+// Эндпоинт для ИНФОРМАЦИИ об аниме и СПИСКА СЕРИЙ (пример: /api/consumet/info/123)
 router.get('/info/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const response = await fetch(`${ANIFY_API}/info/${id}`);
-    const data = await response.json();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        const { id } = req.params;
+        const session = await getSession();
+        // Получаем детали аниме. Здесь может быть список серий внутри.
+        const details = await animepahe.getAnimeDetails(session, id);
+        res.json(details);
+    } catch (err) {
+        console.error("Info error:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// Ссылка на видео через Anify
+// Эндпоинт для ВИДЕО (пример: /api/consumet/watch/episode-123)
 router.get('/watch/:episodeId', async (req, res) => {
-  try {
-    const { episodeId } = req.params;
-    const response = await fetch(`${ANIFY_API}/watch/${episodeId}`);
-    const data = await response.json();
-    res.json({ sources: data.sources || [] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        const { episodeId } = req.params;
+        const session = await getSession();
+        // Получаем прямые ссылки на видео для эпизода
+        const streamData = await animepahe.getStreamingLinks(session, episodeId);
+        
+        // Форматируем ответ так, как ждёт ваш frontend (AnimePage.jsx)
+        // Ожидается массив объектов с полями url и quality
+        const sources = (streamData.sources || []).map(s => ({
+            url: s.url,
+            quality: s.quality || 'unknown'
+        }));
+        
+        res.json({ sources: sources });
+    } catch (err) {
+        console.error("Watch error:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 export default router;

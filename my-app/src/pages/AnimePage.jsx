@@ -709,21 +709,26 @@ const playEpisode = async (episode, index) => {
   
   setLoadingEpisodes(true);
   try {
-    const animeId = anime?.anilistId;
+    const animeTitle = anime?.title;
     const episodeNum = episode.episode_number;
     
-    if (!animeId) {
-      alert("ID аниме не найден");
+    if (!animeTitle) {
+      alert("Название аниме не найдено");
       setLoadingEpisodes(false);
       return;
     }
     
-    // Используем VidBinge вместо VidSrc
-    const embedUrl = `https://embed.aether.mom/embed/anilist-id-{animeId}/{episodeNum}`;
+    // Запрашиваем ссылку на плеер у нашего бэкенда
+    const res = await fetch(`${API_BASE}/api/yani/embed?title=${encodeURIComponent(animeTitle)}&episode=${episodeNum}`);
+    const data = await res.json();
     
-    setCurrentVideo(embedUrl);
-    setCurrentIndex(index);
-    markAsWatched();
+    if (data.url) {
+      setCurrentVideo(data.url);
+      setCurrentIndex(index);
+      markAsWatched();
+    } else {
+      alert("Не удалось получить ссылку на плеер");
+    }
   } catch (err) {
     console.log("PLAY EPISODE ERROR:", err);
     alert("Ошибка загрузки плеера");

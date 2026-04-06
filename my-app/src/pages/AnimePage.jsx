@@ -280,6 +280,28 @@ const AnimePage = () => {
     }
   };
 
+  const loadConsumetEpisodes = async (animeTitle) => {
+  try {
+    // Сначала ищем аниме по названию
+    const searchRes = await fetch(`${API_BASE}/api/consumet/search?q=${encodeURIComponent(animeTitle)}`);
+    const searchData = await searchRes.json();
+    
+    if (searchData.results && searchData.results.length > 0) {
+      const animeId = searchData.results[0].id;
+      
+      // Получаем серии
+      const infoRes = await fetch(`${API_BASE}/api/consumet/info/${animeId}`);
+      const infoData = await infoRes.json();
+      
+      if (infoData.episodes && infoData.episodes.length > 0) {
+        setEpisodes(infoData.episodes);
+      }
+    }
+  } catch (err) {
+    console.log("LOAD CONSUMET EPISODES ERROR:", err);
+  }
+};
+
   const loadFavoriteState = () => {
     const currentUserId = getCurrentUserId();
     if (!currentUserId) return;
@@ -360,48 +382,57 @@ const AnimePage = () => {
   };
 
   useEffect(() => {
-    if (banInfo.banned) return;
+  if (banInfo.banned) return;
 
-    loadAnime();
-
+  const fetchData = async () => {
+    await loadAnime();
+    
+    // Если аниме загрузилось и это не Jikan — загружаем серии из Consumet
+    if (!isJikan && anime?.title) {
+      await loadConsumetEpisodes(anime.title);
+    }
+    
     if (!isJikan) {
-      loadEpisodes();
+      await loadEpisodes();
     } else {
       setEpisodes([]);
       setCurrentVideo(null);
       setCurrentIndex(null);
     }
+  };
+  
+  fetchData();
 
+  loadReactions();
+  loadComments();
+
+  if (user?.id || user?._id) {
+    loadFavoriteState();
+  } else {
+    setLiked(false);
+    setDisliked(false);
+    setFavorite(false);
+  }
+
+  const handleFocus = () => {
     loadReactions();
-    loadComments();
+  };
 
-    if (user?.id || user?._id) {
-      loadFavoriteState();
-    } else {
-      setLiked(false);
-      setDisliked(false);
-      setFavorite(false);
-    }
-
-    const handleFocus = () => {
+  const handleVisibility = () => {
+    if (document.visibilityState === "visible") {
       loadReactions();
-    };
+    }
+  };
 
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        loadReactions();
-      }
-    };
+  window.addEventListener("focus", handleFocus);
+  document.addEventListener("visibilitychange", handleVisibility);
 
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, location.search, banInfo.banned]);
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+    document.removeEventListener("visibilitychange", handleVisibility);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [id, location.search, banInfo.banned, anime?.title]);
 
   const handleLike = async () => {
     const currentUserId = getCurrentUserId();

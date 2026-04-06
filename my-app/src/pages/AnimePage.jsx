@@ -719,7 +719,7 @@ const playEpisode = async (episode, index) => {
     }
     
     // Используем VidBinge вместо VidSrc
-    const embedUrl = `https://vidbinge.dev/embed/anime/${animeId}?ep=${episodeNum}`;
+    const embedUrl = `https://www.2embed.cc/embed/anime/${animeId}/${episodeNum}`;
     
     setCurrentVideo(embedUrl);
     setCurrentIndex(index);

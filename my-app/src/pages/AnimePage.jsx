@@ -709,7 +709,6 @@ const playEpisode = async (episode, index) => {
   
   setLoadingEpisodes(true);
   try {
-    // Используем anilistId из объекта anime
     const animeId = anime?.anilistId;
     const episodeNum = episode.episode_number;
     
@@ -719,7 +718,8 @@ const playEpisode = async (episode, index) => {
       return;
     }
     
-    const embedUrl = `https://vidsrc.xyz/embed/anime/${animeId}?ep=${episodeNum}`;
+    // Используем VidBinge вместо VidSrc
+    const embedUrl = `https://vidbinge.dev/embed/anime/${animeId}?ep=${episodeNum}`;
     
     setCurrentVideo(embedUrl);
     setCurrentIndex(index);
@@ -731,7 +731,6 @@ const playEpisode = async (episode, index) => {
     setLoadingEpisodes(false);
   }
 };
-
 const nextEpisode = () => {
   if (currentIndex !== null && currentIndex < episodes.length - 1) {
     const next = currentIndex + 1;

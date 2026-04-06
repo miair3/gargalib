@@ -1,39 +1,43 @@
 import express from 'express';
 
 const router = express.Router();
-const ANIWATCH_API = 'https://aniwatch-api-phi.vercel.app/api/v2/hianime';
 
-// Поиск аниме
+// Временный заглушка для проверки
 router.get('/search', async (req, res) => {
   try {
     const { q } = req.query;
-    const response = await fetch(`${ANIWATCH_API}/search?q=${encodeURIComponent(q)}`);
-    const data = await response.json();
-    res.json(data);
+    res.json({ 
+      results: [
+        { id: "20", title: "Naruto", episodes: 220 },
+        { id: "21", title: "One Piece", episodes: 1000 }
+      ] 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Информация об аниме и список серий
 router.get('/info/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const response = await fetch(`${ANIWATCH_API}/info?id=${id}`);
-    const data = await response.json();
-    res.json(data);
+    res.json({ 
+      title: "Test Anime", 
+      episodes: [
+        { id: "ep-1", episode_number: 1 },
+        { id: "ep-2", episode_number: 2 }
+      ] 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Ссылка на видео
 router.get('/watch/:episodeId', async (req, res) => {
   try {
-    const { episodeId } = req.params;
-    const response = await fetch(`${ANIWATCH_API}/episode/sources?episodeId=${episodeId}`);
-    const data = await response.json();
-    res.json(data);
+    res.json({ 
+      sources: [
+        { url: "https://vidsrc.xyz/embed/anime/20?ep=1", quality: "iframe" }
+      ] 
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

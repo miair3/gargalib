@@ -672,34 +672,40 @@ const AnimePage = () => {
   }
 };
 
-  const playEpisode = (video, index) => {
-  if (!video || banInfo.banned) return;
-
-  markAsWatched();
-
-  setCurrentVideo(video);
-  setCurrentIndex(index);
+const playEpisode = async (episode, index) => {
+  if (!episode || banInfo.banned) return;
+  
+  setLoadingEpisodes(true);
+  try {
+    // Берём ID аниме из твоей базы (или используем что-то другое)
+    const animeId = anime?.externalId || anime?.id;
+    const episodeNum = episode.episode_number;
+    
+    // Используем VidSrc API для получения iframe
+    const embedUrl = `https://vidsrc.xyz/embed/anime/${animeId}?ep=${episodeNum}`;
+    
+    setCurrentVideo(embedUrl);
+    setCurrentIndex(index);
+    markAsWatched();
+  } catch (err) {
+    console.log("PLAY EPISODE ERROR:", err);
+    alert("Ошибка загрузки плеера");
+  } finally {
+    setLoadingEpisodes(false);
+  }
 };
 
 const nextEpisode = () => {
   if (currentIndex !== null && currentIndex < episodes.length - 1) {
     const next = currentIndex + 1;
-
-    markAsWatched();
-
-    setCurrentVideo(episodes[next].video || episodes[next].video_url);
-    setCurrentIndex(next);
+    playEpisode(episodes[next], next);
   }
 };
 
 const prevEpisode = () => {
   if (currentIndex !== null && currentIndex > 0) {
     const prev = currentIndex - 1;
-
-    markAsWatched();
-
-    setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
-    setCurrentIndex(prev);
+    playEpisode(episodes[prev], prev);
   }
 };
 
@@ -914,7 +920,7 @@ const prevEpisode = () => {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => playEpisode(episodes[0].video || episodes[0].video_url, 0)}
+                    onClick={() => playEpisode(episodes[0], 0)}
                     className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-4 font-semibold text-white shadow-2xl shadow-fuchsia-900/35"
                   >
                     <span className="flex items-center gap-2">
@@ -1123,12 +1129,12 @@ const prevEpisode = () => {
                       </div>
                     </div>
 
-                    <video
+                    <iframe
                       src={currentVideo}
-                      controls
-                      autoPlay
-                      onEnded={handleVideoEnd}
                       className="h-[240px] w-full bg-black sm:h-[420px] xl:h-[560px]"
+                      frameBorder="0"
+                      allowFullScreen
+                      title="Video Player"
                     />
 
                     <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-black/30 px-4 py-4">
@@ -1251,7 +1257,7 @@ const prevEpisode = () => {
                           <div className="pointer-events-none absolute -right-10 top-3 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-3xl transition duration-700 group-hover:scale-125" />
                           <div className="flex items-start justify-between gap-4">
                             <div
-                              onClick={() => playEpisode(ep.video || ep.video_url, index)}
+                               onClick={() => playEpisode(ep, index)}
                               className="flex-1 cursor-pointer"
                             >
                               <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
@@ -1272,7 +1278,7 @@ const prevEpisode = () => {
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.96 }}
-                                onClick={() => playEpisode(ep.video || ep.video_url, index)}
+                                 onClick={() => playEpisode(ep, index)}
                                 className="rounded-2xl border border-white/10 bg-white/10 p-3 text-fuchsia-200"
                               >
                                 <Play className="h-4 w-4" />

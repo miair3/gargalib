@@ -719,7 +719,7 @@ const playEpisode = async (episode, index) => {
     }
     
     // Используем VidBinge вместо VidSrc
-    const embedUrl = `https://animeembed.xyz/anime/${animeId}/${episodeNum}`;
+    const embedUrl = `https://superembed.stream/anime/${animeId}/${episodeNum}`;
     
     setCurrentVideo(embedUrl);
     setCurrentIndex(index);

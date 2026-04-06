@@ -719,7 +719,7 @@ const playEpisode = async (episode, index) => {
     }
     
     // Используем VidBinge вместо VidSrc
-    const embedUrl = `https://rivestream.net/embed?type=anime&id={animeId}&episode={episodeNum}`;
+    const embedUrl = `https://embed.aether.mom/embed/anilist-id-{animeId}/{episodeNum}`;
     
     setCurrentVideo(embedUrl);
     setCurrentIndex(index);

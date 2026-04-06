@@ -719,7 +719,7 @@ const playEpisode = async (episode, index) => {
     }
     
     // Используем VidBinge вместо VidSrc
-    const embedUrl = `https://superembed.stream/anime/${animeId}/${episodeNum}`;
+    const embedUrl = `https://alloha.yani.tv/?token_movie=509a7c2ec2b14977d6d1c2abfbf0a0&token=8b5512267a2a52e9de06d67d342e0c&translation=10&season=1&episode=${episodeNum}&hidden=translation,season,episode}`;
     
     setCurrentVideo(embedUrl);
     setCurrentIndex(index);

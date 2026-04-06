@@ -387,18 +387,18 @@ const AnimePage = () => {
   const fetchData = async () => {
     await loadAnime();
     
-    // Если аниме загрузилось и это не Jikan — загружаем серии из Consumet
     if (!isJikan && anime?.title) {
       await loadConsumetEpisodes(anime.title);
     }
     
-    if (!isJikan) {
-      await loadEpisodes();
-    } else {
-      setEpisodes([]);
-      setCurrentVideo(null);
-      setCurrentIndex(null);
-    }
+    // ЗАКОММЕНТИРОВАНО — больше не перезаписывает серии
+    // if (!isJikan) {
+    //   await loadEpisodes();
+    // } else {
+    //   setEpisodes([]);
+    //   setCurrentVideo(null);
+    //   setCurrentIndex(null);
+    // }
   };
   
   fetchData();
@@ -431,7 +431,6 @@ const AnimePage = () => {
     window.removeEventListener("focus", handleFocus);
     document.removeEventListener("visibilitychange", handleVisibility);
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [id, location.search, banInfo.banned, anime?.title]);
 
   const handleLike = async () => {

@@ -151,6 +151,7 @@ const AnimePage = () => {
   const [episodes, setEpisodes] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
+  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   const [counts, setCounts] = useState({ likes: 0, dislikes: 0 });
   const [liked, setLiked] = useState(false);
@@ -280,16 +281,17 @@ const AnimePage = () => {
     }
   };
 
-  const loadConsumetEpisodes = async (animeTitle) => {
+const loadConsumetEpisodes = async (animeTitle) => {
   try {
-    // Сначала ищем аниме по названию
     const searchRes = await fetch(`${API_BASE}/api/consumet/search?q=${encodeURIComponent(animeTitle)}`);
     const searchData = await searchRes.json();
     
     if (searchData.results && searchData.results.length > 0) {
       const animeId = searchData.results[0].id;
       
-      // Получаем серии
+      // Сохраняем AniList ID в отдельную переменную
+      setAnime(prev => ({ ...prev, anilistId: animeId }));
+      
       const infoRes = await fetch(`${API_BASE}/api/consumet/info/${animeId}`);
       const infoData = await infoRes.json();
       
@@ -708,11 +710,16 @@ const playEpisode = async (episode, index) => {
   
   setLoadingEpisodes(true);
   try {
-    // Берём ID аниме из твоей базы (или используем что-то другое)
-    const animeId = anime?.externalId || anime?.id;
+    // Используем anilistId из объекта anime
+    const animeId = anime?.anilistId;
     const episodeNum = episode.episode_number;
     
-    // Используем VidSrc API для получения iframe
+    if (!animeId) {
+      alert("ID аниме не найден");
+      setLoadingEpisodes(false);
+      return;
+    }
+    
     const embedUrl = `https://vidsrc.xyz/embed/anime/${animeId}?ep=${episodeNum}`;
     
     setCurrentVideo(embedUrl);

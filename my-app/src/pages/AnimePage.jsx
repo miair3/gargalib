@@ -151,7 +151,6 @@ const AnimePage = () => {
   const [episodes, setEpisodes] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(null);
-  const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   const [counts, setCounts] = useState({ likes: 0, dislikes: 0 });
   const [liked, setLiked] = useState(false);
@@ -281,29 +280,6 @@ const AnimePage = () => {
     }
   };
 
-const loadConsumetEpisodes = async (animeTitle) => {
-  try {
-    const searchRes = await fetch(`${API_BASE}/api/consumet/search?q=${encodeURIComponent(animeTitle)}`);
-    const searchData = await searchRes.json();
-    
-    if (searchData.results && searchData.results.length > 0) {
-      const animeId = searchData.results[0].id;
-      
-      // Сохраняем AniList ID в отдельную переменную
-      setAnime(prev => ({ ...prev, anilistId: animeId }));
-      
-      const infoRes = await fetch(`${API_BASE}/api/consumet/info/${animeId}`);
-      const infoData = await infoRes.json();
-      
-      if (infoData.episodes && infoData.episodes.length > 0) {
-        setEpisodes(infoData.episodes);
-      }
-    }
-  } catch (err) {
-    console.log("LOAD CONSUMET EPISODES ERROR:", err);
-  }
-};
-
   const loadFavoriteState = () => {
     const currentUserId = getCurrentUserId();
     if (!currentUserId) return;
@@ -384,56 +360,48 @@ const loadConsumetEpisodes = async (animeTitle) => {
   };
 
   useEffect(() => {
-  if (banInfo.banned) return;
+    if (banInfo.banned) return;
 
-  const fetchData = async () => {
-    await loadAnime();
-    
-    if (!isJikan && anime?.title) {
-      await loadConsumetEpisodes(anime.title);
+    loadAnime();
+
+    if (!isJikan) {
+      loadEpisodes();
+    } else {
+      setEpisodes([]);
+      setCurrentVideo(null);
+      setCurrentIndex(null);
     }
-    
-    // ЗАКОММЕНТИРОВАНО — больше не перезаписывает серии
-    // if (!isJikan) {
-    //   await loadEpisodes();
-    // } else {
-    //   setEpisodes([]);
-    //   setCurrentVideo(null);
-    //   setCurrentIndex(null);
-    // }
-  };
-  
-  fetchData();
 
-  loadReactions();
-  loadComments();
-
-  if (user?.id || user?._id) {
-    loadFavoriteState();
-  } else {
-    setLiked(false);
-    setDisliked(false);
-    setFavorite(false);
-  }
-
-  const handleFocus = () => {
     loadReactions();
-  };
+    loadComments();
 
-  const handleVisibility = () => {
-    if (document.visibilityState === "visible") {
-      loadReactions();
+    if (user?.id || user?._id) {
+      loadFavoriteState();
+    } else {
+      setLiked(false);
+      setDisliked(false);
+      setFavorite(false);
     }
-  };
 
-  window.addEventListener("focus", handleFocus);
-  document.addEventListener("visibilitychange", handleVisibility);
+    const handleFocus = () => {
+      loadReactions();
+    };
 
-  return () => {
-    window.removeEventListener("focus", handleFocus);
-    document.removeEventListener("visibilitychange", handleVisibility);
-  };
-}, [id, location.search, banInfo.banned, anime?.title]);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadReactions();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, location.search, banInfo.banned]);
 
   const handleLike = async () => {
     const currentUserId = getCurrentUserId();
@@ -704,49 +672,34 @@ const loadConsumetEpisodes = async (animeTitle) => {
   }
 };
 
-const playEpisode = async (episode, index) => {
-  if (!episode || banInfo.banned) return;
-  
-  setLoadingEpisodes(true);
-  try {
-    const animeTitle = anime?.title;
-    const episodeNum = episode.episode_number;
-    
-    if (!animeTitle) {
-      alert("Название аниме не найдено");
-      setLoadingEpisodes(false);
-      return;
-    }
-    
-    // Запрашиваем ссылку на плеер у нашего бэкенда
-    const res = await fetch(`${API_BASE}/api/yani/embed?title=${encodeURIComponent(animeTitle)}&episode=${episodeNum}`);
-    const data = await res.json();
-    
-    if (data.url) {
-      setCurrentVideo(data.url);
-      setCurrentIndex(index);
-      markAsWatched();
-    } else {
-      alert("Не удалось получить ссылку на плеер");
-    }
-  } catch (err) {
-    console.log("PLAY EPISODE ERROR:", err);
-    alert("Ошибка загрузки плеера");
-  } finally {
-    setLoadingEpisodes(false);
-  }
+  const playEpisode = (video, index) => {
+  if (!video || banInfo.banned) return;
+
+  markAsWatched();
+
+  setCurrentVideo(video);
+  setCurrentIndex(index);
 };
+
 const nextEpisode = () => {
   if (currentIndex !== null && currentIndex < episodes.length - 1) {
     const next = currentIndex + 1;
-    playEpisode(episodes[next], next);
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[next].video || episodes[next].video_url);
+    setCurrentIndex(next);
   }
 };
 
 const prevEpisode = () => {
   if (currentIndex !== null && currentIndex > 0) {
     const prev = currentIndex - 1;
-    playEpisode(episodes[prev], prev);
+
+    markAsWatched();
+
+    setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
+    setCurrentIndex(prev);
   }
 };
 
@@ -961,7 +914,7 @@ const prevEpisode = () => {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => playEpisode(episodes[0], 0)}
+                    onClick={() => playEpisode(episodes[0].video || episodes[0].video_url, 0)}
                     className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-4 font-semibold text-white shadow-2xl shadow-fuchsia-900/35"
                   >
                     <span className="flex items-center gap-2">
@@ -1170,12 +1123,12 @@ const prevEpisode = () => {
                       </div>
                     </div>
 
-                    <iframe
+                    <video
                       src={currentVideo}
+                      controls
+                      autoPlay
+                      onEnded={handleVideoEnd}
                       className="h-[240px] w-full bg-black sm:h-[420px] xl:h-[560px]"
-                      frameBorder="0"
-                      allowFullScreen
-                      title="Video Player"
                     />
 
                     <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-black/30 px-4 py-4">
@@ -1298,7 +1251,7 @@ const prevEpisode = () => {
                           <div className="pointer-events-none absolute -right-10 top-3 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-3xl transition duration-700 group-hover:scale-125" />
                           <div className="flex items-start justify-between gap-4">
                             <div
-                               onClick={() => playEpisode(ep, index)}
+                              onClick={() => playEpisode(ep.video || ep.video_url, index)}
                               className="flex-1 cursor-pointer"
                             >
                               <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
@@ -1319,7 +1272,7 @@ const prevEpisode = () => {
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.96 }}
-                                 onClick={() => playEpisode(ep, index)}
+                                onClick={() => playEpisode(ep.video || ep.video_url, index)}
                                 className="rounded-2xl border border-white/10 bg-white/10 p-3 text-fuchsia-200"
                               >
                                 <Play className="h-4 w-4" />

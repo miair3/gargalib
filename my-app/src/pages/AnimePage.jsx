@@ -1,13 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Heart,
   ThumbsUp,
   ThumbsDown,
-  Play,
-  ChevronLeft,
-  ChevronRight,
   MessageCircle,
   Sparkles,
   Star,
@@ -149,8 +146,6 @@ const AnimePage = () => {
 
   const [anime, setAnime] = useState(null);
   const [episodes, setEpisodes] = useState([]);
-  const [currentVideo, setCurrentVideo] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(null);
 
   const [counts, setCounts] = useState({ likes: 0, dislikes: 0 });
   const [liked, setLiked] = useState(false);
@@ -368,8 +363,6 @@ const AnimePage = () => {
       loadEpisodes();
     } else {
       setEpisodes([]);
-      setCurrentVideo(null);
-      setCurrentIndex(null);
     }
 
     loadReactions();
@@ -622,10 +615,6 @@ const AnimePage = () => {
     if (!confirmDelete) return;
 
     try {
-      const deletedIndex = episodes.findIndex(
-        (episode) => String(episode.id) === String(episodeId)
-      );
-
       const res = await fetch(`${API_BASE}/api/episodes/${episodeId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -639,76 +628,11 @@ const AnimePage = () => {
         return;
       }
 
-      const updatedEpisodes = episodes.filter(
-        (episode) => String(episode.id) !== String(episodeId)
+      setEpisodes((prev) =>
+        prev.filter((episode) => String(episode.id) !== String(episodeId))
       );
-
-      setEpisodes(updatedEpisodes);
-
-      if (currentIndex !== null) {
-        if (deletedIndex === currentIndex) {
-          setCurrentVideo(null);
-          setCurrentIndex(null);
-        } else if (deletedIndex < currentIndex) {
-          setCurrentIndex((prev) => (prev > 0 ? prev - 1 : 0));
-        }
-      }
     } catch (err) {
       console.log("DELETE EPISODE ERROR:", err);
-    }
-  };
-
-  const markAsWatched = () => {
-  const currentUserId = getCurrentUserId();
-  if (!currentUserId || !contentId || isJikan || banInfo.banned) return;
-
-  const key = `watched_${currentUserId}`;
-  const watched = JSON.parse(localStorage.getItem(key)) || [];
-
-  if (!watched.map(String).includes(String(contentId))) {
-    watched.push(String(contentId));
-    localStorage.setItem(key, JSON.stringify(watched));
-    window.dispatchEvent(new Event("userChanged"));
-  }
-};
-
-  const playEpisode = (video, index) => {
-  if (!video || banInfo.banned) return;
-
-  markAsWatched();
-
-  setCurrentVideo(video);
-  setCurrentIndex(index);
-};
-
-const nextEpisode = () => {
-  if (currentIndex !== null && currentIndex < episodes.length - 1) {
-    const next = currentIndex + 1;
-
-    markAsWatched();
-
-    setCurrentVideo(episodes[next].video || episodes[next].video_url);
-    setCurrentIndex(next);
-  }
-};
-
-const prevEpisode = () => {
-  if (currentIndex !== null && currentIndex > 0) {
-    const prev = currentIndex - 1;
-
-    markAsWatched();
-
-    setCurrentVideo(episodes[prev].video || episodes[prev].video_url);
-    setCurrentIndex(prev);
-  }
-};
-
-  const handleVideoEnd = () => {
-    if (currentIndex === null) return;
-    if (currentIndex === episodes.length - 1) {
-      markAsWatched();
-    } else {
-      nextEpisode();
     }
   };
 
@@ -884,7 +808,7 @@ const prevEpisode = () => {
                 variants={fadeUp}
                 className="mt-5 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base lg:text-lg lg:leading-8"
               >
-                {anime.genre || "Без жанра"}. Смотри серии, ставь реакции, сохраняй
+                {anime.genre || "Без жанра"}. Ставь реакции, сохраняй
                 в избранное и наслаждайся красивой аниме-страницей.
               </motion.p>
 
@@ -910,19 +834,6 @@ const prevEpisode = () => {
               </motion.div>
 
               <motion.div variants={fadeUp} className="mt-7 flex flex-wrap gap-3">
-                {!isJikan && episodes.length > 0 && (
-                  <motion.button
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => playEpisode(episodes[0].video || episodes[0].video_url, 0)}
-                    className="rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-6 py-4 font-semibold text-white shadow-2xl shadow-fuchsia-900/35"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Play className="h-5 w-5" /> Смотреть с первой серии
-                    </span>
-                  </motion.button>
-                )}
-
                 <motion.button
                   whileHover={{ scale: 1.03, y: -2 }}
                   whileTap={{ scale: 0.98 }}
@@ -1101,75 +1012,6 @@ const prevEpisode = () => {
                 </div>
               </motion.div>
 
-              <AnimatePresence>
-                {!isJikan && currentVideo && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 20 }}
-                    className={`anime-premium-card overflow-hidden rounded-[32px] ${glass}`}
-                  >
-                    <div className="flex flex-col gap-4 border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.35em] text-fuchsia-200">
-                          Now Watching
-                        </p>
-                        <h3 className="mt-2 text-lg font-bold sm:text-2xl">
-                          {anime.title} — Серия {currentIndex !== null ? currentIndex + 1 : 1}
-                        </h3>
-                      </div>
-                      <div className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
-                        Автопереход включён
-                      </div>
-                    </div>
-
-                    <video
-                      src={currentVideo}
-                      controls
-                      autoPlay
-                      onEnded={handleVideoEnd}
-                      className="h-[240px] w-full bg-black sm:h-[420px] xl:h-[560px]"
-                    />
-
-                    <div className="flex items-center justify-between gap-3 border-t border-white/10 bg-black/30 px-4 py-4">
-                      <motion.button
-                        whileHover={{ scale: currentIndex === null || currentIndex === 0 ? 1 : 1.03 }}
-                        whileTap={{ scale: currentIndex === null || currentIndex === 0 ? 1 : 0.98 }}
-                        onClick={prevEpisode}
-                        disabled={currentIndex === null || currentIndex === 0}
-                        className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/8 px-4 py-3 font-semibold text-white disabled:opacity-40"
-                      >
-                        <ChevronLeft className="h-4 w-4" /> Назад
-                      </motion.button>
-
-                      <div className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-slate-200">
-                        Серия {currentIndex !== null ? currentIndex + 1 : 1} из {episodes.length}
-                      </div>
-
-                      <motion.button
-                        whileHover={{
-                          scale:
-                            currentIndex === null || currentIndex === episodes.length - 1
-                              ? 1
-                              : 1.03,
-                        }}
-                        whileTap={{
-                          scale:
-                            currentIndex === null || currentIndex === episodes.length - 1
-                              ? 1
-                              : 0.98,
-                        }}
-                        onClick={nextEpisode}
-                        disabled={currentIndex === null || currentIndex === episodes.length - 1}
-                        className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-cyan-400 px-4 py-3 font-semibold text-white disabled:opacity-40"
-                      >
-                        Далее <ChevronRight className="h-4 w-4" />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
               <motion.div
                 variants={fadeUp}
                 className={`anime-premium-card rounded-[32px] p-6 sm:p-8 ${glass}`}
@@ -1177,7 +1019,7 @@ const prevEpisode = () => {
                 <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-2xl font-bold">Серии</h2>
-                    <p className="mt-1 text-sm text-slate-300">Выберите серию для просмотра</p>
+                    <p className="mt-1 text-sm text-slate-300">Список доступных серий</p>
                   </div>
                   <div className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-slate-200">
                     {episodes.length} эп.
@@ -1189,7 +1031,7 @@ const prevEpisode = () => {
                     <p className="text-xl font-bold text-white">Аниме пока недоступно</p>
                     <p className="mt-2 text-sm leading-7 text-slate-300">
                       Это аниме ещё не добавлено на сайт. Пожалуйста, загляните немного позже —
-                      возможно, оно скоро появится для просмотра.
+                      возможно, оно скоро появится.
                     </p>
                     {isAdmin && (
                       <div className="mt-5 flex justify-center">
@@ -1208,8 +1050,7 @@ const prevEpisode = () => {
                   <div className="rounded-[28px] border border-dashed border-white/10 bg-white/5 px-6 py-10 text-center">
                     <p className="text-xl font-bold text-white">Серии скоро появятся</p>
                     <p className="mt-2 text-sm leading-7 text-slate-300">
-                      Сейчас для этого аниме серии ещё не загружены. Пожалуйста, загляните
-                      позже — они могут появиться совсем скоро.
+                      Сейчас для этого аниме серии ещё не загружены. Пожалуйста, загляните позже.
                     </p>
                     {isAdmin && (
                       <div className="mt-5 flex justify-center">
@@ -1230,75 +1071,49 @@ const prevEpisode = () => {
                     animate="visible"
                     className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
                   >
-                    {episodes.map((ep, index) => {
-                      const isActive = currentIndex === index;
-                      return (
-                        <motion.div
-                          key={ep.id}
-                          variants={fadeUp}
-                          whileHover={{ y: -6, scale: 1.01 }}
-                          className={`anime-premium-card group relative overflow-hidden rounded-[28px] border p-5 transition ${
-                            isActive
-                              ? "border-fuchsia-400/40 bg-gradient-to-br from-fuchsia-500/15 via-violet-500/10 to-cyan-400/10 shadow-[0_18px_45px_rgba(217,70,239,0.15)]"
-                              : "border-white/10 bg-white/[0.05] hover:bg-white/[0.08]"
-                          }`}
-                          style={{
-                            animation: `cardReveal .75s cubic-bezier(.2,.8,.2,1) forwards`,
-                            animationDelay: `${Math.min(index * 70, 900)}ms`,
-                            opacity: 0,
-                          }}
-                        >
-                          <div className="pointer-events-none absolute -right-10 top-3 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-3xl transition duration-700 group-hover:scale-125" />
-                          <div className="flex items-start justify-between gap-4">
-                            <div
-                              onClick={() => playEpisode(ep.video || ep.video_url, index)}
-                              className="flex-1 cursor-pointer"
-                            >
-                              <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
-                                Episode
-                              </p>
-                              <p className="mt-3 text-4xl font-black text-white">
-                                {ep.episode_number}
-                              </p>
-                              <p className="mt-2 text-lg font-bold text-white">
-                                Серия {ep.episode_number}
-                              </p>
-                              <p className="mt-2 text-sm leading-6 text-slate-300">
-                                Нажмите, чтобы открыть плеер.
-                              </p>
-                            </div>
+                    {episodes.map((ep, index) => (
+                      <motion.div
+                        key={ep.id}
+                        variants={fadeUp}
+                        whileHover={{ y: -6, scale: 1.01 }}
+                        className="anime-premium-card group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.05] p-5 transition hover:bg-white/[0.08]"
+                        style={{
+                          animation: `cardReveal .75s cubic-bezier(.2,.8,.2,1) forwards`,
+                          animationDelay: `${Math.min(index * 70, 900)}ms`,
+                          opacity: 0,
+                        }}
+                      >
+                        <div className="pointer-events-none absolute -right-10 top-3 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-3xl transition duration-700 group-hover:scale-125" />
 
-                            <div className="flex flex-col gap-2">
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.96 }}
-                                onClick={() => playEpisode(ep.video || ep.video_url, index)}
-                                className="rounded-2xl border border-white/10 bg-white/10 p-3 text-fuchsia-200"
-                              >
-                                <Play className="h-4 w-4" />
-                              </motion.button>
-
-                              {isOwner && (
-                                <motion.button
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.96 }}
-                                  onClick={() => handleDeleteEpisode(ep.id)}
-                                  className="rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-red-300"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </motion.button>
-                              )}
-                            </div>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <p className="text-xs uppercase tracking-[0.3em] text-fuchsia-200">
+                              Episode
+                            </p>
+                            <p className="mt-3 text-4xl font-black text-white">
+                              {ep.episode_number}
+                            </p>
+                            <p className="mt-2 text-lg font-bold text-white">
+                              Серия {ep.episode_number}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-slate-300">
+                              Серия добавлена в список.
+                            </p>
                           </div>
 
-                          {isActive && (
-                            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/20 bg-fuchsia-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200">
-                              <Sparkles className="h-3.5 w-3.5" /> Сейчас выбрана
-                            </div>
+                          {isOwner && (
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => handleDeleteEpisode(ep.id)}
+                              className="rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-red-300"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </motion.button>
                           )}
-                        </motion.div>
-                      );
-                    })}
+                        </div>
+                      </motion.div>
+                    ))}
                   </motion.div>
                 )}
               </motion.div>

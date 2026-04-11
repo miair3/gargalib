@@ -10,7 +10,12 @@ const AddEpisode = () => {
   const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("currentUser"));
+  let user = null;
+try {
+  user = JSON.parse(localStorage.getItem("currentUser"));
+} catch {
+  user = null;
+}
 
   const saveUploadedEpisodeToLocal = (currentUserId, episodeData) => {
     try {
@@ -34,61 +39,69 @@ const AddEpisode = () => {
   };
 
   const handleSubmit = async () => {
-    if (!episodeNumber) {
-      alert("Введи номер серии");
-      return;
-    }
+  if (!episodeNumber) {
+    alert("Введи номер серии");
+    return;
+  }
 
-    if (!videoFile && !videoUrl.trim()) {
-      alert("Выбери видеофайл или вставь ссылку");
-      return;
-    }
+  if (!videoFile && !videoUrl.trim()) {
+    alert("Выбери видеофайл или вставь ссылку");
+    return;
+  }
 
-    const currentUserId = user?.id || user?._id;
+  const currentUserId = user?.id || user?._id;
 
-    if (!currentUserId) {
-      alert("Не найден пользователь");
-      return;
-    }
+  if (!currentUserId) {
+    alert("Не найден пользователь");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("animeId", id);
-    formData.append("episodeNumber", episodeNumber);
-    formData.append("userId", currentUserId);
+  const formData = new FormData();
+  formData.append("animeId", id);
+  formData.append("episodeNumber", episodeNumber);
+  formData.append("userId", currentUserId);
 
-    if (videoFile) {
-      formData.append("video", videoFile);
-    } else {
-      formData.append("videoUrl", videoUrl.trim());
-    }
+  if (videoFile) {
+    formData.append("video", videoFile);
+  } else {
+    formData.append("videoUrl", videoUrl.trim());
+  }
 
+  try {
+    setLoading(true);
+
+    const res = await fetch("https://gargalib-backend.onrender.com/api/episodes", {
+      method: "POST",
+      body: formData,
+    });
+
+    const text = await res.text();
+    console.log("SERVER STATUS:", res.status);
+    console.log("SERVER RESPONSE:", text);
+
+    let data = {};
     try {
-      setLoading(true);
-
-      const res = await fetch("https://gargalib-backend.onrender.com/api/episodes", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.message || data.error || "Ошибка загрузки");
-        return;
-      }
-
-      saveUploadedEpisodeToLocal(currentUserId, data);
-
-      alert("Серия добавлена 🔥");
-      navigate(`/anime/${id}`);
-    } catch (err) {
-      console.log(err);
-      alert("Ошибка сервера");
-    } finally {
-      setLoading(false);
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { raw: text };
     }
-  };
 
+    if (!res.ok) {
+      alert(data.message || data.error || data.raw || "Ошибка загрузки");
+      return;
+    }
+
+    saveUploadedEpisodeToLocal(currentUserId, data);
+
+    alert("Серия добавлена 🔥");
+    navigate(`/anime/${id}`);
+  } catch (err) {
+    console.log("UPLOAD ERROR:", err);
+    alert("Ошибка сервера");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-[#070b18] via-[#17153b] to-[#3b0f5c] px-4 py-10 text-white">
       <div className="pointer-events-none absolute left-[-40px] top-10 h-56 w-56 rounded-full bg-pink-500/20 blur-3xl"></div>
